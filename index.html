@@ -1,0 +1,2304 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tutorial Vercel para principiantes · V001</title>
+<style>
+/* ===================== VARIABLES Y BASE ===================== */
+:root{
+  --bg:#0a0e1a; --card:#0f172a; --card2:#111c33; --blue:#1e3a5f;
+  --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --accent2:#818cf8;
+  --border:#1e293b; --ok:#34d399; --warn:#fbbf24; --err:#f87171;
+  --radius:14px; --fs:16px;
+  --codebg:#070b14; --codetext:#dbeafe;
+}
+[data-theme="light"]{
+  --bg:#eef2f7; --card:#ffffff; --card2:#f8fafc; --blue:#dbeafe;
+  --text:#0f172a; --muted:#475569; --accent:#0369a1; --accent2:#4f46e5;
+  --border:#cbd5e1; --ok:#047857; --warn:#b45309; --err:#b91c1c;
+  --codebg:#0f172a; --codetext:#e2e8f0;
+}
+*{box-sizing:border-box}
+html{font-size:var(--fs);-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.65;transition:background .2s,color .2s}
+h1,h2,h3,h4{scroll-margin-top:70px}
+h1{font-size:clamp(1.6rem,4.5vw,2.4rem);line-height:1.15;margin:.2rem 0 .6rem}
+h2{font-size:clamp(1.3rem,3.5vw,1.7rem);margin:2rem 0 .8rem;padding-left:.6rem;border-left:4px solid var(--accent);line-height:1.25}
+h3{font-size:1.15rem;margin:1.4rem 0 .5rem}
+h4{font-size:1rem;margin:1rem 0 .4rem;color:var(--accent)}
+p{margin:.6rem 0}
+a{color:var(--accent)}
+ul,ol{padding-left:1.3rem;margin:.5rem 0}
+li{margin:.25rem 0}
+strong{color:var(--text)}
+small{color:var(--muted)}
+button{font:inherit;color:inherit}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+
+/* ===================== BARRA DE PROGRESO ===================== */
+#progressbar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));z-index:100;transition:width .1s linear}
+
+/* ===================== CABECERA ===================== */
+.topbar{max-width:1120px;margin:0 auto;padding:1rem 1rem .5rem;display:grid;gap:.7rem}
+.brand{display:flex;gap:.7rem;align-items:center}
+.logo{display:inline-grid;place-items:center;width:2.4rem;height:2.4rem;border-radius:.7rem;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#04101f;font-weight:900;font-size:1.15rem;flex:0 0 auto}
+.brand strong{display:block;font-size:1.02rem;line-height:1.2}
+.brand small{color:var(--muted);font-size:.76rem}
+.controls{display:flex;flex-wrap:wrap;gap:.4rem}
+.controls button{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:.6rem;padding:.45rem .65rem;font-size:.82rem;cursor:pointer;min-height:38px}
+.controls button:hover{border-color:var(--accent)}
+.controls button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.controls button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.searchwrap{position:relative}
+#search{width:100%;padding:.65rem .8rem;border-radius:.7rem;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.92rem}
+#search:focus{outline:2px solid var(--accent);outline-offset:1px}
+.search-results{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:.7rem;box-shadow:0 12px 30px rgba(0,0,0,.35);max-height:60vh;overflow:auto;z-index:80}
+.search-results[hidden]{display:none}
+.sr-item{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--border);padding:.6rem .75rem;color:var(--text);cursor:pointer}
+.sr-item:last-child{border-bottom:0}
+.sr-item:hover,.sr-item:focus{background:var(--blue)}
+.sr-tab{display:inline-block;font-size:.62rem;font-weight:800;letter-spacing:.07em;color:var(--accent);border:1px solid var(--accent);border-radius:.3rem;padding:0 .3rem;margin-right:.5rem;vertical-align:middle}
+.sr-text{font-size:.83rem;color:var(--muted)}
+.no-results{padding:.8rem;color:var(--muted);font-size:.88rem}
+
+/* ===================== PESTAÑAS ===================== */
+.tabs{position:sticky;top:0;z-index:60;display:flex;gap:.25rem;overflow-x:auto;padding:.5rem 1rem;background:var(--bg);border-bottom:1px solid var(--border);scrollbar-width:thin}
+.tabbtn{flex:0 0 auto;background:none;border:1px solid transparent;color:var(--muted);padding:.45rem .7rem;border-radius:.5rem;font-size:.76rem;font-weight:800;letter-spacing:.06em;cursor:pointer;min-height:38px}
+.tabbtn:hover{color:var(--text)}
+.tabbtn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.tabbtn.active{color:#04101f;background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent}
+[data-theme="light"] .tabbtn.active{color:#fff}
+
+/* ===================== CONTENIDO ===================== */
+main{max-width:1120px;margin:0 auto;padding:1rem 1rem 4rem}
+[role="tabpanel"]{animation:fadeIn .25s ease}
+[role="tabpanel"][hidden]{display:none}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.1rem;margin:1rem 0}
+.card > :first-child{margin-top:0}
+.card > :last-child{margin-bottom:0}
+details.card{padding:0}
+details.card > summary{padding:1rem 1.1rem;cursor:pointer;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:1rem;align-items:center}
+details.card > summary::-webkit-details-marker{display:none}
+details.card > summary::after{content:"+";color:var(--accent);font-size:1.25rem;line-height:1}
+details.card[open] > summary::after{content:"−"}
+details.card > .details-body{padding:0 1.1rem 1rem}
+.note{border-left:4px solid var(--accent);background:var(--card2);padding:.7rem .9rem;border-radius:0 .6rem .6rem 0;margin:1rem 0}
+.note.warn{border-left-color:var(--warn)}
+.note.danger{border-left-color:var(--err)}
+.note.ok{border-left-color:var(--ok)}
+.note > :first-child{margin-top:0}
+.note > :last-child{margin-bottom:0}
+.hero{padding:1rem 0 .4rem}
+.kicker{color:var(--accent);font-weight:800;letter-spacing:.12em;font-size:.72rem;text-transform:uppercase}
+.meta{display:flex;flex-wrap:wrap;gap:.4rem;margin:.8rem 0}
+.meta span{font-size:.72rem;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:.2rem .6rem;background:var(--card)}
+.lead{font-size:1.05rem;color:var(--text)}
+.grid2{display:grid;gap:.8rem}
+@media (min-width:720px){.grid2{grid-template-columns:1fr 1fr}}
+.mini{background:var(--card);border:1px solid var(--border);border-radius:.8rem;padding:.8rem .9rem}
+.mini h3{margin:.1rem 0 .3rem;font-size:.98rem}
+.mini p{margin:0;font-size:.88rem;color:var(--muted)}
+.btn{display:inline-block;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#04101f;font-weight:800;text-decoration:none;padding:.65rem 1rem;border-radius:.6rem;border:0;font-size:.9rem;cursor:pointer}
+[data-theme="light"] .btn{color:#fff}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btnrow{display:flex;flex-wrap:wrap;gap:.6rem;margin:1rem 0}
+
+/* ===================== ETIQUETAS DE VERIFICACIÓN ===================== */
+.badge{display:inline-block;font-size:.6rem;font-weight:800;letter-spacing:.06em;padding:.08rem .35rem;border-radius:.3rem;vertical-align:middle;border:1px solid;white-space:nowrap}
+.b-doc{color:#34d399;border-color:#34d399;background:rgba(52,211,153,.1)}
+.b-parcial{color:#fbbf24;border-color:#fbbf24;background:rgba(251,191,36,.1)}
+.b-general{color:#94a3b8;border-color:#94a3b8;background:rgba(148,163,184,.1)}
+.b-nop{color:#f87171;border-color:#f87171;background:rgba(248,113,113,.1)}
+[data-theme="light"] .b-doc{color:#047857;border-color:#047857;background:#ecfdf5}
+[data-theme="light"] .b-parcial{color:#b45309;border-color:#b45309;background:#fffbeb}
+[data-theme="light"] .b-general{color:#475569;border-color:#475569;background:#f1f5f9}
+[data-theme="light"] .b-nop{color:#b91c1c;border-color:#b91c1c;background:#fef2f2}
+
+/* ===================== CÓDIGO Y COPIAR ===================== */
+.codewrap{position:relative;margin:1rem 0}
+pre{background:var(--codebg);color:var(--codetext);border:1px solid var(--border);border-radius:.7rem;padding:1.1rem 1rem;overflow-x:auto;font-size:.8rem;line-height:1.55;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;tab-size:2;margin:0}
+pre code{font:inherit;white-space:pre}
+.copybtn{position:absolute;top:.45rem;right:.45rem;background:rgba(56,189,248,.14);color:var(--accent);border:1px solid var(--accent);border-radius:.4rem;padding:.22rem .45rem;font-size:.62rem;font-weight:800;letter-spacing:.06em;cursor:pointer}
+.copybtn:hover{background:var(--accent);color:#04101f}
+.copybtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ===================== TABLAS ===================== */
+.tablewrap{overflow-x:auto;margin:1rem 0;border:1px solid var(--border);border-radius:.7rem}
+table{width:100%;border-collapse:collapse;font-size:.86rem;min-width:440px}
+th,td{padding:.55rem .7rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:var(--card2);font-size:.72rem;letter-spacing:.05em;text-transform:uppercase}
+tr:last-child td{border-bottom:0}
+
+/* ===================== LISTAS DE COMPROBACIÓN ===================== */
+.checklist{list-style:none;padding:0;margin:.8rem 0;display:grid;gap:.45rem}
+.checklist li{display:flex;gap:.6rem;align-items:flex-start;padding:.5rem .6rem;background:var(--card2);border:1px solid var(--border);border-radius:.5rem;margin:0}
+.checklist input{margin-top:.28rem;width:1.05rem;height:1.05rem;accent-color:var(--accent);flex:0 0 auto}
+.checklist label{cursor:pointer}
+
+/* ===================== SVG ===================== */
+.svgbox{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.6rem;margin:1rem 0;overflow:hidden}
+.svgbox svg{display:block;width:100%;height:auto}
+@keyframes vzDash{to{stroke-dashoffset:-64}}
+.anim-dash{animation:vzDash 1.5s linear infinite}
+@keyframes vzPulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.12)}}
+.anim-pulse{transform-box:fill-box;transform-origin:center;animation:vzPulse 2.8s ease-in-out infinite}
+body.anim-paused .anim-dash,
+body.anim-paused .anim-pulse{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){.anim-dash,.anim-pulse{animation:none}}
+
+/* ===================== FLASH DE BÚSQUEDA ===================== */
+.flash{animation:flash 2s ease}
+@keyframes flash{0%,100%{background:transparent}20%{background:rgba(56,189,248,.18)}}
+
+/* ===================== TOAST, ARRIBA, MODAL ===================== */
+#toast{position:fixed;left:50%;bottom:1.2rem;transform:translate(-50%,20px);background:var(--card);color:var(--text);border:1px solid var(--accent);padding:.6rem 1rem;border-radius:.6rem;box-shadow:0 10px 30px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:.25s;z-index:120;font-size:.84rem;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toTop{position:fixed;right:1rem;bottom:1rem;width:2.7rem;height:2.7rem;border-radius:50%;border:1px solid var(--accent);background:var(--card);color:var(--accent);font-size:1.1rem;display:none;place-items:center;z-index:90;cursor:pointer}
+#toTop.show{display:grid}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:grid;place-items:center;z-index:130;padding:1rem}
+.modal[hidden]{display:none}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;width:min(100%,560px)}
+.modal-box h3{margin:0 0 .4rem}
+.modal-box p{margin:.2rem 0 .6rem;font-size:.85rem;color:var(--muted)}
+.modal textarea{width:100%;min-height:180px;background:var(--codebg);color:var(--codetext);border:1px solid var(--border);border-radius:.5rem;padding:.7rem;font-family:ui-monospace,monospace;font-size:.78rem}
+.modal-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:.6rem}
+
+/* ===================== PIE ===================== */
+footer{max-width:1120px;margin:0 auto;padding:1.5rem 1rem 3rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);text-align:center}
+
+/* ===================== ESCRITORIO ===================== */
+@media (min-width:760px){
+  .topbar{grid-template-columns:1fr auto;grid-template-areas:"brand controls" "search search";align-items:center}
+  .brand{grid-area:brand}
+  .controls{grid-area:controls;justify-content:flex-end}
+  .searchwrap{grid-area:search}
+  #search{max-width:560px}
+}
+
+/* ===================== IMPRESIÓN ===================== */
+@page{size:A4 portrait;margin:14mm 12mm}
+@media print{
+  html{font-size:11pt}
+  body{background:#fff!important;color:#000!important}
+  #progressbar,.topbar,.tabs,#toTop,#toast,.copybtn,.modal{display:none!important}
+  [role="tabpanel"][hidden]{display:block!important}
+  main{max-width:none;padding:0}
+  .card,.mini,.note,.svgbox{background:#fff!important;border:1px solid #999!important;box-shadow:none!important;break-inside:avoid}
+  h1,h2,h3,h4,p,li,td,th,summary{color:#000!important}
+  a{color:#000!important;text-decoration:underline}
+  pre{background:#f4f4f4!important;color:#000!important;border:1px solid #999!important;white-space:pre-wrap!important;word-break:break-word!important;font-size:9pt}
+  table{min-width:0!important;font-size:9pt}
+  .tablewrap{overflow:visible!important;border:0}
+  .badge{border-color:#555!important;color:#000!important;background:#fff!important}
+  details{display:block!important}
+  details > summary{list-style:none}
+  details > summary::after{content:""!important}
+  .svgbox svg{max-height:70mm}
+  .checklist li{background:#fff!important;border:1px solid #999!important}
+  .btnrow{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<div id="progressbar" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">▲</span>
+    <div>
+      <strong>Vercel para principiantes</strong>
+      <small>Tutorial interactivo · Versión V001</small>
+    </div>
+  </div>
+
+  <div class="controls" role="group" aria-label="Controles del tutorial">
+    <button type="button" id="fontMinus" aria-label="Reducir el tamaño de letra">A−</button>
+    <button type="button" id="fontPlus" aria-label="Aumentar el tamaño de letra">A+</button>
+    <button type="button" id="themeBtn" aria-pressed="false">🌙 Oscuro</button>
+    <button type="button" id="printBtn" aria-label="Imprimir o guardar como PDF">🖨 PDF</button>
+  </div>
+
+  <div class="searchwrap">
+    <input id="search" type="search" placeholder="Buscar en el tutorial… (mínimo 2 letras)" aria-label="Buscar en el tutorial" autocomplete="off">
+    <div id="searchResults" class="search-results" hidden></div>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Secciones del tutorial">
+  <button class="tabbtn active" role="tab" id="tab-inicio" data-tab="inicio" aria-controls="panel-inicio" aria-selected="true" tabindex="0">INICIO</button>
+  <button class="tabbtn" role="tab" id="tab-conceptos" data-tab="conceptos" aria-controls="panel-conceptos" aria-selected="false" tabindex="-1">CONCEPTOS</button>
+  <button class="tabbtn" role="tab" id="tab-procedimiento" data-tab="procedimiento" aria-controls="panel-procedimiento" aria-selected="false" tabindex="-1">PROCEDIMIENTO</button>
+  <button class="tabbtn" role="tab" id="tab-practica" data-tab="practica" aria-controls="panel-practica" aria-selected="false" tabindex="-1">PRÁCTICA</button>
+  <button class="tabbtn" role="tab" id="tab-errores" data-tab="errores" aria-controls="panel-errores" aria-selected="false" tabindex="-1">ERRORES</button>
+  <button class="tabbtn" role="tab" id="tab-resumen" data-tab="resumen" aria-controls="panel-resumen" aria-selected="false" tabindex="-1">RESUMEN</button>
+  <button class="tabbtn" role="tab" id="tab-fuentes" data-tab="fuentes" aria-controls="panel-fuentes" aria-selected="false" tabindex="-1">FUENTES</button>
+  <button class="tabbtn" role="tab" id="tab-creditos" data-tab="creditos" aria-controls="panel-creditos" aria-selected="false" tabindex="-1">CRÉDITOS</button>
+</nav>
+
+<noscript>
+  <div style="max-width:1120px;margin:1rem auto;padding:1rem;border:1px solid #f87171;border-radius:.7rem;color:#f87171">
+    Activa JavaScript para usar las pestañas, el buscador, los botones de copiar y el progreso guardado.
+    Puedes imprimir el documento con Ctrl+P: la hoja de impresión muestra todas las secciones.
+  </div>
+</noscript>
+
+<main>
+
+<!-- ============================================================ -->
+<!-- INICIO -->
+<!-- ============================================================ -->
+<section id="panel-inicio" role="tabpanel" aria-labelledby="tab-inicio">
+
+  <div class="hero">
+    <div class="kicker">Tutorial interactivo · Metodología GAUNTLET</div>
+    <h1>Vercel para principiantes: publica tu primera web y entiende lo que haces</h1>
+    <p class="lead">Una guía práctica para quien nunca ha programado. Empezarás publicando una página en Internet y terminarás entendiendo despliegues, dominios, variables de entorno, APIs y cómo volver atrás si algo se rompe.</p>
+    <div class="meta">
+      <span>Versión V001</span>
+      <span>17/10/2026</span>
+      <span>Nivel: desde cero</span>
+      <span>Basado en la guía de Rubén Sbarsky</span>
+    </div>
+  </div>
+
+  <div class="svgbox" id="svgInicio" role="img" aria-label="Ilustración animada: tu proyecto viaja desde tu ordenador, pasa por la red de Vercel y llega a los visitantes de todo el mundo"></div>
+
+  <div class="btnrow">
+    <a class="btn" href="#procedimiento">Empezar el procedimiento</a>
+    <a class="btn ghost" href="#conceptos">Ver los conceptos primero</a>
+    <button type="button" class="btn ghost" id="pauseAnim" aria-pressed="false">⏸ Pausar animación</button>
+  </div>
+
+  <h2>Qué vas a conseguir</h2>
+  <div class="grid2">
+    <div class="mini"><h3>Publicar sin programar</h3><p>Subir una carpeta con un <code>index.html</code> y obtener una dirección pública con HTTPS en minutos.</p></div>
+    <div class="mini"><h3>Actualizar con seguridad</h3><p>Conectar GitHub para que cada cambio se publique solo, con una vista previa antes de llegar a producción.</p></div>
+    <div class="mini"><h3>No romper nada</h3><p>Entender los entornos y usar Instant Rollback para recuperar una versión buena.</p></div>
+    <div class="mini"><h3>Ir más allá</h3><p>Dominio propio, variables de entorno, una API sencilla y control de costes.</p></div>
+  </div>
+
+  <h2>Qué necesitas para empezar</h2>
+  <ul>
+    <li>Un ordenador con navegador actualizado (Windows, macOS o Linux).</li>
+    <li>Un correo electrónico o una cuenta de GitHub, GitLab o Bitbucket.</li>
+    <li>Nada más para la primera publicación. Node.js y la terminal solo hacen falta más adelante y son opcionales.</li>
+  </ul>
+
+  <h2>Cómo usar este tutorial</h2>
+  <ul>
+    <li><strong>Ocho pestañas</strong> con contenido independiente. La pestaña activa se recuerda en la dirección (<code>#conceptos</code>, <code>#procedimiento</code>…).</li>
+    <li><strong>Progreso guardado:</strong> el tema, el tamaño de letra y las listas de comprobación se conservan en tu navegador.</li>
+    <li><strong>Buscador:</strong> escribe dos o más letras y salta al punto exacto de cualquier pestaña.</li>
+    <li><strong>Botones COPIAR</strong> en los bloques de código e instrucciones: copian el contenido íntegro, sin añadir nada.</li>
+    <li><strong>Impresión o PDF:</strong> el botón 🖨 prepara todas las secciones, abre los desplegables y monta las ilustraciones antes de imprimir.</li>
+    <li><strong>Móvil:</strong> el diseño es de una sola columna; las tablas anchas se desplazan en horizontal.</li>
+  </ul>
+
+  <h2>Cómo se marca la información</h2>
+  <p>La guía de origen distingue lo documentado de lo supuesto. Este tutorial conserva ese sistema para que sepas qué puedes dar por comprobado y qué debes verificar:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Etiqueta</th><th>Significado</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge b-doc">DOC</span></td><td>Afirmación tomada de una página oficial de Vercel leída completa en la fecha de consulta de la fuente (16/10/2026).</td></tr>
+        <tr><td><span class="badge b-parcial">DOC-PARCIAL</span></td><td>Afirmación vista en un fragmento de una página oficial, sin haber leído la página entera. Compruébala antes de depender de ella.</td></tr>
+        <tr><td><span class="badge b-general">GENERAL</span></td><td>Conocimiento técnico general o información de Vercel no comprobada en la documentación durante la consulta.</td></tr>
+        <tr><td><span class="badge b-nop">NO PROBADO</span></td><td>Procedimiento o código que no se ha ejecutado en un ordenador real. Debes probarlo tú.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note warn">
+    <p><strong>Honestidad sobre las pruebas.</strong> La guía de origen declara que no ejecutó comandos ni desplegó proyectos: todo su contenido práctico es <span class="badge b-nop">NO PROBADO</span>. Este tutorial hereda esa declaración. Además, el archivo que estás leyendo se ha construido y revisado de forma estática: no se ha ejecutado en un navegador real desde el entorno de generación. Las funciones interactivas están implementadas, pero su prueba final corresponde a quien abre el archivo.</p>
+  </div>
+
+  <h2>Mapa de aprendizaje</h2>
+  <pre><code>NIVEL 0  Conceptos              -> entiendes el vocabulario
+NIVEL 1  Primera web            -> tienes una web publicada
+NIVEL 2  Panel, Git y GitHub    -> actualizas con seguridad
+NIVEL 3  Frameworks y CLI       -> controlas el proyecto
+NIVEL 4  Dominio y configuración-> web profesional
+NIVEL 5  APIs, datos e IA       -> aplicaciones completas
+NIVEL 6  Seguridad y costes     -> trabajas sin sustos
+NIVEL 7  Equipos y diagnóstico  -> colaboras y resuelves
+NIVEL 8  Proyectos y 30 días    -> práctica completa</code></pre>
+
+  <div class="note ok">
+    <p><strong>Consejo de uso.</strong> Si es tu primera vez, no saltes: lee CONCEPTOS, haz el PROCEDIMIENTO paso a paso y después practica con los ejercicios. Si ya conoces lo básico, ve directo a PRÁCTICA y usa ERRORES como referencia.</p>
+  </div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- CONCEPTOS -->
+<!-- ============================================================ -->
+<section id="panel-conceptos" role="tabpanel" aria-labelledby="tab-conceptos" hidden>
+
+  <h2>Conceptos: el vocabulario mínimo para no perderte</h2>
+  <p>No necesitas programar para publicar una web, pero sí entender una docena de palabras. Cada concepto se explica antes de usarlo.</p>
+
+  <h3>1. ¿Qué es Vercel?</h3>
+  <p><strong>Vercel</strong> es una plataforma en Internet donde publicas webs y aplicaciones para que cualquiera pueda abrirlas desde su navegador. Todo lo que publicas vive en un <strong>proyecto</strong>: puede ser una web, una API, tareas programadas, contenedores o cargas de trabajo de inteligencia artificial <span class="badge b-doc">DOC</span>.</p>
+  <p>Analogía: tu web es un libro. Escribirlo en tu ordenador es <em>desarrollar</em>. Vercel es la librería con escaparate donde el libro queda expuesto, ordenado, protegido y accesible las 24 horas.</p>
+
+  <h3>2. Desplegar, alojar y publicar</h3>
+  <ul>
+    <li><strong>Desplegar</strong> (<em>deploy</em>): copiar tu proyecto a los ordenadores de Vercel, prepararlo (compilarlo si hace falta) y hacerlo accesible mediante una dirección.</li>
+    <li><strong>Alojamiento</strong> u <em>hosting</em>: el servicio de tener esos archivos en ordenadores conectados a Internet permanentemente.</li>
+    <li><strong>Publicar</strong>: dejar una versión visible para el público en la dirección definitiva.</li>
+  </ul>
+
+  <h3>3. Los tres entornos</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Fase</th><th>Dónde ocurre</th><th>Quién lo ve</th><th>Nombre en Vercel</th></tr></thead>
+      <tbody>
+        <tr><td>Desarrollar</td><td>Tu ordenador</td><td>Solo tú</td><td>Local / Development</td></tr>
+        <tr><td>Probar</td><td>Una copia publicada aparte</td><td>Tú y quien invites</td><td>Preview (vista previa)</td></tr>
+        <tr><td>Publicar</td><td>La dirección definitiva</td><td>Todo el mundo</td><td>Production (producción)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Vercel define exactamente esos tres entornos por defecto <span class="badge b-doc">DOC</span>. Regla especial: el <strong>primer despliegue</strong> de un proyecto nuevo es siempre de producción, aunque lo hagas desde otra rama <span class="badge b-doc">DOC</span>.</p>
+
+  <h3>4. Proyecto y despliegue</h3>
+  <p>Un <strong>proyecto</strong> agrupa despliegues, dominios, variables de entorno y ajustes. Un <strong>despliegue</strong> es una versión concreta e inmutable de ese proyecto: no se modifica después; publicar consiste en apuntar el dominio de producción a un despliegue existente.</p>
+
+  <h3>5. Git, GitHub y el flujo de trabajo</h3>
+  <ul>
+    <li><strong>Repositorio:</strong> carpeta de proyecto con historial de todos sus cambios.</li>
+    <li><strong>Git:</strong> programa que registra ese historial en tu ordenador.</li>
+    <li><strong>GitHub:</strong> servicio web que guarda repositorios en la nube y permite colaborar.</li>
+    <li><strong>Commit:</strong> una «foto» con mensaje de los cambios en un momento.</li>
+    <li><strong>Rama (branch):</strong> línea paralela de trabajo. <code>main</code> suele ser la de producción.</li>
+    <li><strong>Pull request (PR):</strong> petición de fusionar una rama en otra, con revisión.</li>
+    <li><strong>Merge:</strong> fusionar los cambios de una rama en otra.</li>
+  </ul>
+  <p>Cuando conectas un repositorio, cada subida a la rama de producción genera un despliegue de producción y cada subida a otra rama genera una vista previa <span class="badge b-doc">DOC</span>.</p>
+
+  <h3>6. La web por dentro: HTML, CSS y JavaScript</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Lenguaje</th><th>Para qué sirve</th><th>Analogía</th></tr></thead>
+      <tbody>
+        <tr><td><strong>HTML</strong></td><td>Estructura y contenido (títulos, párrafos, enlaces)</td><td>Muros y habitaciones de una casa</td></tr>
+        <tr><td><strong>CSS</strong></td><td>Aspecto (colores, tamaños, tipografías)</td><td>Pintura y decoración</td></tr>
+        <tr><td><strong>JavaScript</strong></td><td>Comportamiento (botones que hacen cosas)</td><td>Electricidad y mecanismos</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Ejemplo mínimo de HTML:</p>
+  <div class="codewrap"><pre><code>&lt;!doctype html&gt;
+&lt;html lang="es"&gt;
+  &lt;head&gt;&lt;meta charset="utf-8"&gt;&lt;title&gt;Hola&lt;/title&gt;&lt;/head&gt;
+  &lt;body&gt;&lt;h1&gt;Hola, mundo&lt;/h1&gt;&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+  <p>Cada parte entre <code>&lt;</code> y <code>&gt;</code> es una <strong>etiqueta</strong>. <code>&lt;h1&gt;</code> es un título principal.</p>
+
+  <h3>7. Framework</h3>
+  <p>Un <strong>framework</strong> es un conjunto de herramientas y reglas que facilita crear webs grandes: Next.js, Astro, SvelteKit, Nuxt, Vite… Vercel <strong>detecta automáticamente</strong> el framework y configura la compilación <span class="badge b-doc">DOC</span>. Si no lo detecta, puedes elegir el preset a mano.</p>
+
+  <h3>8. Terminal, Node.js y npm</h3>
+  <ul>
+    <li><strong>Terminal:</strong> ventana donde escribes órdenes de texto (comandos) en lugar de hacer clic.</li>
+    <li><strong>Node.js:</strong> permite ejecutar JavaScript fuera del navegador; muchas herramientas web lo necesitan. La documentación de Vercel indica <strong>Node.js 18 o superior</strong> para la CLI <span class="badge b-doc">DOC</span>.</li>
+    <li><strong>npm:</strong> viene con Node.js y sirve para instalar paquetes. <code>npm i -g vercel</code> instala la CLI de Vercel de forma global <span class="badge b-doc">DOC</span>.</li>
+  </ul>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Sistema</th><th>Cómo abrir la terminal</th></tr></thead>
+      <tbody>
+        <tr><td>Windows 11</td><td>Tecla Windows, escribe <code>PowerShell</code> o <code>Terminal</code> y pulsa Intro</td></tr>
+        <tr><td>macOS</td><td><code>Cmd + Espacio</code>, escribe <code>Terminal</code>, Intro</td></tr>
+        <tr><td>Linux</td><td><code>Ctrl + Alt + T</code> en muchas distribuciones</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>9. Dominio, DNS y HTTPS</h3>
+  <ul>
+    <li><strong>Dominio:</strong> nombre legible de tu web (<code>ejemplo.com</code>).</li>
+    <li><strong>Dominio apex o raíz:</strong> el nombre sin prefijo (<code>ejemplo.com</code>).</li>
+    <li><strong>Subdominio:</strong> prefijo delante (<code>www.ejemplo.com</code>, <code>blog.ejemplo.com</code>).</li>
+    <li><strong>DNS:</strong> «agenda telefónica» de Internet que traduce nombres de dominio a direcciones numéricas.</li>
+    <li><strong>HTTPS:</strong> conexión cifrada (candado del navegador). Vercel emite el certificado SSL automáticamente tras verificar el dominio <span class="badge b-doc">DOC</span>.</li>
+  </ul>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Registro DNS</th><th>Qué hace</th></tr></thead>
+      <tbody>
+        <tr><td><strong>A</strong></td><td>Apunta un nombre a una dirección IPv4</td></tr>
+        <tr><td><strong>AAAA</strong></td><td>Apunta un nombre a una dirección IPv6</td></tr>
+        <tr><td><strong>CNAME</strong></td><td>Hace que un nombre sea alias de otro nombre</td></tr>
+        <tr><td><strong>TXT</strong></td><td>Guarda texto: verificaciones de propiedad, políticas de correo</td></tr>
+        <tr><td><strong>MX</strong></td><td>Indica qué servidores reciben el correo del dominio</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note danger">
+    <p><strong>Nunca borres registros DNS «para limpiar».</strong> Los MX y TXT mantienen el correo y la verificación de otros servicios. Antes de cambiar algo, haz una captura o exporta la zona DNS.</p>
+  </div>
+
+  <h3>10. Variables de entorno</h3>
+  <p>Una <strong>variable de entorno</strong> es un par <code>NOMBRE=valor</code> disponible para tu aplicación durante el build o la ejecución. Sirve para claves de API, direcciones de bases de datos y ajustes que cambian entre pruebas y producción. Vercel las cifra en reposo y <strong>los cambios solo se aplican a despliegues nuevos</strong> <span class="badge b-doc">DOC</span>.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Tipo</th><th>Se puede volver a leer</th><th>Cuándo usarlo</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Config</strong></td><td>Sí, el valor se ve en el panel</td><td>Ajustes no secretos (<code>API_URL</code>, flags)</td></tr>
+        <tr><td><strong>Secret</strong></td><td>No (solo escritura)</td><td>Claves, tokens, contraseñas</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Un Secret no puede volver a leerse ni convertirse en Config: si necesitas cambiarlo, lo sobrescribes <span class="badge b-doc">DOC</span>.</p>
+
+  <h3>11. Funciones de servidor y APIs</h3>
+  <ul>
+    <li><strong>Petición HTTP:</strong> mensaje que envía el navegador a un servidor («dame esta dirección» o «recibe estos datos»).</li>
+    <li><strong>Respuesta HTTP:</strong> lo que devuelve el servidor, con un código de estado: <code>200</code> correcto, <code>404</code> no existe, <code>500</code> error del servidor.</li>
+    <li><strong>API:</strong> dirección que devuelve datos (normalmente JSON) en lugar de una página.</li>
+    <li><strong>Función de servidor:</strong> programa que se ejecuta bajo demanda cuando alguien visita su ruta. Vercel las llama <strong>Vercel Functions</strong> <span class="badge b-doc">DOC</span>.</li>
+  </ul>
+  <p>Regla de oro: las claves secretas <strong>solo</strong> deben usarse en el servidor. Todo lo que llega al navegador es público.</p>
+
+  <h3>12. La cadena completa</h3>
+  <pre><code>TU ORDENADOR          GITHUB               VERCEL                INTERNET
++-------------+  push  +----------+  aviso  +------------------+      +-----------+
+| Archivos    |------->| Reposito-|-------->| 1. Descarga      |      | Servidores|
+| del proyecto|        | rio en   |         | 2. Instala       |----->| de Vercel |
+| (código)    |        | la nube  |         | 3. Compila       |      | (CDN)     |
++-------------+        +----------+         | 4. Publica       |      +-----+-----+
+                                            +------------------+            |
+                                                                     pide web
+                                            +------------------+            |
+                                            | NAVEGADOR del    |<-----------+
+                                            | visitante        |
+                                            +------------------+</code></pre>
+
+  <h3>Glosario completo</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Término</th><th>Definición sencilla</th></tr></thead>
+      <tbody>
+        <tr><td>A (registro)</td><td>Registro DNS que asocia un nombre con una dirección IPv4.</td></tr>
+        <tr><td>AAAA (registro)</td><td>Registro DNS que asocia un nombre con una dirección IPv6.</td></tr>
+        <tr><td>API</td><td>Interfaz mediante la que un programa pide datos o acciones a otro.</td></tr>
+        <tr><td>Apex (dominio)</td><td>Dominio sin prefijo (<code>ejemplo.com</code>).</td></tr>
+        <tr><td>Build</td><td>Proceso que convierte el código fuente en archivos publicables.</td></tr>
+        <tr><td>Caché</td><td>Copia guardada para responder más rápido.</td></tr>
+        <tr><td>CDN</td><td>Red de servidores repartidos por el mundo que entregan contenido cerca del visitante.</td></tr>
+        <tr><td>CLI</td><td>Programa que se maneja con comandos de texto.</td></tr>
+        <tr><td>Clonar</td><td>Descargar una copia de un repositorio.</td></tr>
+        <tr><td>CNAME</td><td>Registro DNS que hace de un nombre un alias de otro.</td></tr>
+        <tr><td>Commit</td><td>Registro de cambios en Git con un mensaje.</td></tr>
+        <tr><td>Config (variable)</td><td>Variable de entorno cuyo valor se puede volver a leer.</td></tr>
+        <tr><td>Core Web Vitals</td><td>Métricas de experiencia de usuario (LCP, INP, CLS).</td></tr>
+        <tr><td>CSS</td><td>Lenguaje de estilos de las páginas web.</td></tr>
+        <tr><td>Dependencia</td><td>Paquete de terceros que usa tu proyecto.</td></tr>
+        <tr><td>Deployment Protection</td><td>Función que restringe quién puede abrir despliegues.</td></tr>
+        <tr><td>Despliegue</td><td>Versión publicada de un proyecto.</td></tr>
+        <tr><td>DNS</td><td>Sistema que traduce nombres de dominio en direcciones.</td></tr>
+        <tr><td>Dominio</td><td>Nombre de una web (<code>ejemplo.com</code>).</td></tr>
+        <tr><td>Entorno</td><td>Contexto de ejecución: Production, Preview, Development o personalizado.</td></tr>
+        <tr><td>Framework</td><td>Conjunto de herramientas para construir webs.</td></tr>
+        <tr><td>Función de servidor</td><td>Código que se ejecuta bajo demanda en el servidor.</td></tr>
+        <tr><td>Git</td><td>Programa que registra el historial de cambios.</td></tr>
+        <tr><td>GitHub</td><td>Servicio web para alojar repositorios Git.</td></tr>
+        <tr><td>Header (cabecera)</td><td>Instrucción que acompaña a una respuesta HTTP.</td></tr>
+        <tr><td>Hobby</td><td>Plan gratuito de Vercel para uso personal no comercial.</td></tr>
+        <tr><td>Hosting</td><td>Tener tus archivos disponibles en Internet.</td></tr>
+        <tr><td>HTML</td><td>Lenguaje que estructura el contenido de una web.</td></tr>
+        <tr><td>HTTP</td><td>Protocolo de comunicación de la web.</td></tr>
+        <tr><td>HTTPS</td><td>HTTP cifrado con certificado.</td></tr>
+        <tr><td>Instant Rollback</td><td>Volver rápidamente a un despliegue de producción anterior.</td></tr>
+        <tr><td>Integración</td><td>Conexión de Vercel con un servicio externo.</td></tr>
+        <tr><td>JavaScript</td><td>Lenguaje que da comportamiento a las páginas.</td></tr>
+        <tr><td>JSON</td><td>Formato de texto para datos estructurados.</td></tr>
+        <tr><td>Marketplace</td><td>Catálogo de integraciones y servicios de terceros en Vercel.</td></tr>
+        <tr><td>Merge</td><td>Fusionar cambios de una rama en otra.</td></tr>
+        <tr><td>Monorepo</td><td>Repositorio con varios proyectos.</td></tr>
+        <tr><td>MX</td><td>Registro DNS que indica el servidor de correo.</td></tr>
+        <tr><td>Nameservers</td><td>Servidores DNS autorizados de un dominio.</td></tr>
+        <tr><td>Node.js</td><td>Entorno para ejecutar JavaScript fuera del navegador.</td></tr>
+        <tr><td>npm</td><td>Gestor de paquetes de Node.js.</td></tr>
+        <tr><td>Output Directory</td><td>Carpeta con el resultado del build.</td></tr>
+        <tr><td>Preset</td><td>Configuración predefinida para un framework.</td></tr>
+        <tr><td>Producción</td><td>Versión pública de la web.</td></tr>
+        <tr><td>Promover</td><td>Hacer que un despliegue pase a ser el de producción.</td></tr>
+        <tr><td>Propagación DNS</td><td>Tiempo en que un cambio DNS se extiende por Internet.</td></tr>
+        <tr><td>Proyecto</td><td>Unidad en Vercel que agrupa despliegues, dominios y ajustes.</td></tr>
+        <tr><td>Pull request</td><td>Petición de fusión de una rama con revisión.</td></tr>
+        <tr><td>Redeploy</td><td>Volver a desplegar un despliegue existente.</td></tr>
+        <tr><td>Redirect</td><td>Redirección que cambia la URL visible.</td></tr>
+        <tr><td>Repositorio</td><td>Carpeta de proyecto con historial Git.</td></tr>
+        <tr><td>Rewrite</td><td>Sirve otro contenido sin cambiar la URL.</td></tr>
+        <tr><td>Root Directory</td><td>Carpeta del repositorio donde está el proyecto.</td></tr>
+        <tr><td>Secret (variable)</td><td>Variable de entorno de solo escritura.</td></tr>
+        <tr><td>Servidor</td><td>Ordenador que responde peticiones.</td></tr>
+        <tr><td>SSL/TLS</td><td>Tecnología de cifrado de HTTPS.</td></tr>
+        <tr><td>Subdominio</td><td>Prefijo de un dominio (<code>blog.ejemplo.com</code>).</td></tr>
+        <tr><td>Terminal</td><td>Ventana para escribir comandos.</td></tr>
+        <tr><td>TXT</td><td>Registro DNS de texto (verificaciones, políticas).</td></tr>
+        <tr><td>Variable de entorno</td><td>Dato de configuración fuera del código.</td></tr>
+        <tr><td>Vercel Drop</td><td>Despliegue arrastrando archivos al navegador.</td></tr>
+        <tr><td>Vista previa</td><td>Despliegue de prueba por rama o PR.</td></tr>
+        <tr><td>Webhook</td><td>Aviso automático entre servicios cuando ocurre un evento.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- PROCEDIMIENTO -->
+<!-- ============================================================ -->
+<section id="panel-procedimiento" role="tabpanel" aria-labelledby="tab-procedimiento" hidden>
+
+  <h2>Procedimiento: de cero a una web publicada</h2>
+  <p>Hay tres caminos para publicar. Empieza por el <strong>Camino A</strong> (el más sencillo). Después conecta GitHub para actualizar sin repetir pasos.</p>
+
+  <h3>Paso 0. Crea tu cuenta de Vercel</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> tener una cuenta activa y ver el panel.</p>
+    <p><strong>Qué necesitas:</strong> un correo o una cuenta de GitHub, GitLab o Bitbucket.</p>
+    <ol>
+      <li>Abre <code>https://vercel.com/signup</code> en tu navegador. <em>Deberías ver una pantalla de registro con opciones de acceso.</em></li>
+      <li>Elige un método de acceso (por ejemplo, continuar con GitHub si ya tienes cuenta; si no, correo electrónico). <em>Te pedirá confirmar con un código o autorizar en GitHub.</em></li>
+      <li>Si el asistente pregunta por el tipo de uso, elige <strong>personal/hobby</strong> si son proyectos propios y no comerciales. El plan Hobby es solo para uso personal no comercial <span class="badge b-doc">DOC</span>.</li>
+      <li>Comprueba que ves el <strong>panel</strong>: una página con tus proyectos (vacía al principio) y un botón para crear uno.</li>
+    </ol>
+    <p><strong>Por qué funciona:</strong> al registrarte, Vercel crea tu equipo personal y lo asocia a tu identidad.</p>
+    <p><strong>Errores frecuentes:</strong></p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Error</th><th>Solución</th></tr></thead>
+      <tbody>
+        <tr><td>No llega el correo de confirmación</td><td>Revisa spam, espera unos minutos y prueba otro método de acceso.</td></tr>
+        <tr><td>Registro con GitHub y quiero otra cuenta de GitHub</td><td>Cierra la sesión de GitHub y reinicia el registro <span class="badge b-doc">DOC</span>.</td></tr>
+        <tr><td>Entro y no veo mis proyectos</td><td>Mira el <strong>selector de equipo</strong> (arriba a la izquierda): puede que estés en otro equipo.</td></tr>
+      </tbody>
+    </table></div>
+    <p><strong>Comprobación:</strong> cierra sesión, vuelve a entrar y ves el panel.</p>
+  </div>
+
+  <h3>Paso 1. Prepara tu primer archivo <code>index.html</code></h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> tener una página que funcione en tu ordenador antes de publicarla.</p>
+    <ol>
+      <li>Crea en tu escritorio una carpeta llamada <code>mi-primera-web</code>.</li>
+      <li>Dentro, crea un archivo de texto y llámalo exactamente <code>index.html</code>.
+        <br><small>En Windows 11: clic derecho → Nuevo → Documento de texto → renombra. Activa <strong>Ver → Mostrar → Extensiones de nombre de archivo</strong>; si se queda como <code>index.html.txt</code>, no funcionará.</small></li>
+      <li>Abre el archivo con el Bloc de notas, pega el código siguiente y guarda con <strong>Archivo → Guardar</strong> (UTF-8 si te lo pregunta).</li>
+      <li>Haz doble clic en el archivo. <em>Deberías ver «¡Hola desde Vercel!» en el navegador.</em></li>
+    </ol>
+    <div class="codewrap"><pre><code>&lt;!doctype html&gt;
+&lt;html lang="es"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;title&gt;Mi primera web en Vercel&lt;/title&gt;
+  &lt;style&gt;
+    body { font-family: Arial, sans-serif; max-width: 40rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.6; }
+    h1 { color: #1a1a1a; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;¡Hola desde Vercel!&lt;/h1&gt;
+  &lt;p&gt;Esta es mi primera web publicada en Internet.&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+    <p><strong>Por qué funciona:</strong> HTML es el lenguaje que los navegadores entienden; abrirlo localmente comprueba que está bien antes de publicar.</p>
+  </div>
+
+  <h3>Paso 2 (Camino A). Publica con Vercel Drop</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> publicar la carpeta sin Git ni terminal.</p>
+    <p><strong>Conceptos previos:</strong> despliegue, producción.</p>
+    <p>Según la documentación, Vercel Drop permite desplegar un archivo, carpeta o <code>.zip</code> arrastrándolo al navegador, sin Git, CLI ni preparación local <span class="badge b-parcial">DOC-PARCIAL</span>.</p>
+    <ol>
+      <li>Abre <code>https://vercel.com/drop</code> con la sesión iniciada. <em>Deberías ver la página de Drop.</em></li>
+      <li>Arrastra la carpeta <code>mi-primera-web</code> (o un <code>.zip</code> que la contenga) a la zona indicada, o elige <strong>file</strong>/<strong>folder</strong>. <em>La página reconoce los archivos.</em></li>
+      <li>Elige tu equipo y escribe un nombre de proyecto, por ejemplo <code>mi-primera-web</code>. Usa minúsculas, números y guiones.</li>
+      <li>Pulsa <strong>Deploy</strong>. <em>Verás una pantalla de progreso y, al terminar, un enlace a tu web.</em></li>
+      <li>Abre el enlace. Debe mostrar «¡Hola desde Vercel!».</li>
+    </ol>
+    <p><strong>Por qué funciona:</strong> Vercel recibe los archivos, detecta que es una web estática y la publica en su red. Como es el primer despliegue de un proyecto nuevo, se crea como <strong>producción</strong> <span class="badge b-doc">DOC</span>.</p>
+    <p><strong>Errores frecuentes:</strong></p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Error</th><th>Causa probable</th><th>Solución</th></tr></thead>
+      <tbody>
+        <tr><td>La página dice 404</td><td>No hay <code>index.html</code> en la raíz de lo arrastrado, o está dentro de otra subcarpeta</td><td>Comprueba que <code>index.html</code> está directamente dentro de la carpeta arrastrada</td></tr>
+        <tr><td>El archivo se llama <code>index.html.txt</code></td><td>Extensiones ocultas en Windows</td><td>Muestra extensiones y renombra</td></tr>
+        <tr><td>No encuentro el botón Deploy</td><td>La interfaz cambió</td><td>Busca el botón principal de confirmación en la página de Drop</td></tr>
+        <tr><td>Nombre de proyecto rechazado</td><td>Caracteres no permitidos</td><td>Usa solo minúsculas, números y guiones</td></tr>
+      </tbody>
+    </table></div>
+    <p><strong>Limitación:</strong> cada <em>drop</em> crea un proyecto nuevo; para actualizar a menudo conviene conectar Git después <span class="badge b-parcial">DOC-PARCIAL</span>.</p>
+  </div>
+
+  <h3>Paso 3 (Camino B, recomendado). Conecta GitHub</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> publicar un proyecto que vive en GitHub, con despliegue automático en cada cambio.</p>
+    <p><strong>Qué necesitas:</strong> cuenta de GitHub y de Vercel; un repositorio con tu <code>index.html</code>.</p>
+    <h4>A. Crear el repositorio</h4>
+    <ol>
+      <li>En <code>https://github.com/new</code> escribe un nombre, por ejemplo <code>mi-primera-web</code>.</li>
+      <li>Marca <strong>Public</strong> o <strong>Private</strong> (ambas funcionan) y pulsa <strong>Create repository</strong>.</li>
+      <li>En la página del repositorio vacío, pulsa <strong>uploading an existing file</strong>, arrastra tu <code>index.html</code> y pulsa <strong>Commit changes</strong>. <em>El archivo queda listado.</em></li>
+    </ol>
+    <h4>B. Importar en Vercel</h4>
+    <ol>
+      <li>Abre <code>https://vercel.com/new</code> <span class="badge b-doc">DOC</span>.</li>
+      <li>Conecta tu cuenta de GitHub si no lo has hecho. Cuando GitHub lo pida, autoriza la aplicación de Vercel <strong>solo para los repositorios que vas a publicar</strong>.</li>
+      <li>Localiza <code>mi-primera-web</code> y pulsa <strong>Import</strong>. <em>Verás un formulario con el Framework Preset; para HTML puro suele aparecer «Other».</em></li>
+      <li>Revisa la configuración sin cambiar nada: <strong>Root Directory</strong> vacío o <code>./</code>; <strong>Build Command</strong> y <strong>Output Directory</strong> en blanco para un sitio estático.</li>
+      <li>Pulsa <strong>Deploy</strong> <span class="badge b-doc">DOC</span>. <em>Verás registros de construcción y, al terminar, la dirección <code>.vercel.app</code>.</em></li>
+      <li>Abre la dirección y comprueba la página.</li>
+    </ol>
+    <p><strong>Por qué funciona:</strong> al importar, Vercel instala una aplicación en GitHub que le avisa de cada subida. Cada subida a la rama de producción crea un despliegue de producción; cada subida a otra rama crea una vista previa <span class="badge b-doc">DOC</span>.</p>
+    <div class="note warn">
+      <p><strong>Permisos importantes:</strong> si importas un repositorio personal debes ser su <strong>Owner</strong>; un simple colaborador no puede. Si pertenece a una organización de GitHub, debes ser Owner de la organización o Member con acceso al repositorio; un <em>Outside Collaborator</em> no puede importarlo <span class="badge b-doc">DOC</span>. Además, un equipo Hobby <strong>no</strong> puede conectarse a repositorios de organizaciones Git <span class="badge b-doc">DOC</span>.</p>
+    </div>
+    <p><strong>Errores frecuentes:</strong></p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Error</th><th>Solución</th></tr></thead>
+      <tbody>
+        <tr><td>«Unable to find your GitHub repository» o no aparece</td><td>Revisa permisos y que la app de Vercel tenga acceso a ese repositorio <span class="badge b-doc">DOC</span>.</td></tr>
+        <tr><td>Hobby con repositorio de una organización</td><td>No permitido; usa un repositorio personal o cambia de plan <span class="badge b-doc">DOC</span>.</td></tr>
+        <tr><td>La web sale en blanco o 404</td><td>Comprueba que <code>index.html</code> está en la raíz y que el repositorio tiene contenido.</td></tr>
+        <tr><td>Build falla</td><td>Mira el registro de build (pestaña ERRORES).</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <h3>Paso 4. Actualiza tu web desde GitHub</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> cambiar un texto y verlo publicado sin tocar Vercel.</p>
+    <ol>
+      <li>Abre el repositorio en GitHub y haz clic en <code>index.html</code>.</li>
+      <li>Pulsa el icono del <strong>lápiz</strong> (editar).</li>
+      <li>Cambia el texto.</li>
+      <li>Pulsa <strong>Commit changes…</strong>, escribe un mensaje descriptivo («Cambio el título») y confirma.</li>
+      <li>En Vercel, abre <strong>Deployments</strong>: aparece un despliegue nuevo en construcción y luego <strong>Ready</strong>.</li>
+    </ol>
+    <p><strong>Por qué funciona:</strong> Vercel despliega cada push por defecto, incluidos los hechos a ramas y los pull request <span class="badge b-doc">DOC</span>.</p>
+    <div class="note warn"><p><strong>Cuidado:</strong> si commiteas directamente en <code>main</code>, el cambio va <strong>directo a producción</strong>. Para probar antes, usa una rama (paso siguiente).</p></div>
+  </div>
+
+  <h3>Paso 5. Prueba sin publicar: ramas y vista previa</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> probar un cambio en una dirección de vista previa antes de publicarlo.</p>
+    <ol>
+      <li>En GitHub, abre el desplegable de ramas y escribe <code>cambio-titulo</code>; pulsa <strong>Create branch</strong>.</li>
+      <li>Edita un archivo en esa rama y confirma el cambio <strong>en la rama</strong>, no en <code>main</code>.</li>
+      <li>En Vercel → <strong>Deployments</strong>, localiza el despliegue de la rama. Su entorno es <strong>Preview</strong>. Ábrelo: la producción sigue igual.</li>
+      <li>En GitHub pulsa <strong>Compare &amp; pull request</strong> → <strong>Create pull request</strong>. El bot de Vercel comenta con el enlace de vista previa <span class="badge b-doc">DOC</span>.</li>
+      <li>Si todo está bien, pulsa <strong>Merge pull request</strong> → <strong>Confirm</strong>. La fusión en <code>main</code> genera el despliegue de producción.</li>
+    </ol>
+    <p><strong>Por qué funciona:</strong> Vercel crea un despliegue por rama y comenta en los PR; la rama de producción por defecto es <code>main</code> y se puede cambiar en los ajustes del proyecto <span class="badge b-doc">DOC</span>.</p>
+  </div>
+
+  <h3>Paso 6. Vuelve atrás sin pánico: Instant Rollback</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> recuperar rápido una versión buena si producción se rompe.</p>
+    <ol>
+      <li>Proyecto → <strong>Deployments</strong> (o la tarjeta de producción del proyecto).</li>
+      <li>Localiza el despliegue anterior bueno, abre su menú y elige <strong>Instant Rollback</strong> <span class="badge b-parcial">DOC-PARCIAL</span>.</li>
+      <li>Confirma. <em>La dirección de producción muestra la versión antigua casi al instante: Vercel reasigna dominios, no recompila.</em></li>
+    </ol>
+    <div class="note danger">
+      <p><strong>Muy importante:</strong> tras un rollback, Vercel <strong>desactiva la asignación automática de dominios de producción</strong>. Para restaurar el comportamiento normal debes <strong>promover</strong> otro despliegue (<code>vercel promote [id o url]</code>). Si no lo haces, los nuevos push <strong>no</strong> se publicarán automáticamente en producción <span class="badge b-parcial">DOC-PARCIAL</span>.</p>
+    </div>
+    <p><strong>Por CLI:</strong> <code>vercel rollback</code> (al anterior) o <code>vercel rollback &lt;url&gt;</code> <span class="badge b-parcial">DOC-PARCIAL</span>.</p>
+    <p><strong>Limitación:</strong> si borras un despliegue, ya no podrás hacer rollback a él <span class="badge b-doc">DOC</span>.</p>
+    <p><strong>Siguiente paso:</strong> corrige el error en el código, súbelo y promueve el nuevo despliegue.</p>
+  </div>
+
+  <h3>Paso 7. Tu dominio propio</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> que tu web responda en <code>www.ejemplo.com</code> con HTTPS, sin romper el correo.</p>
+    <p><strong>Qué necesitas:</strong> un dominio comprado (en Vercel o en otro registrador) y acceso a su panel DNS.</p>
+    <h4>A. Añadir el dominio en Vercel</h4>
+    <ol>
+      <li>Proyecto → <strong>Settings → Domains</strong> <span class="badge b-doc">DOC</span>.</li>
+      <li>Escribe tu dominio y pulsa <strong>Add</strong>.</li>
+      <li>Elige qué nombre será el principal: <code>www</code> o el apex (<code>ejemplo.com</code>); el otro redirigirá.</li>
+      <li>Verás el dominio en estado <strong>Invalid Configuration</strong> hasta que configures el DNS, junto a una tabla de registros recomendados.</li>
+    </ol>
+    <h4>B. Elegir método DNS</h4>
+    <p>Vercel documenta dos vías: <strong>A/CNAME</strong> (configuras registros en tu registrador) o <strong>nameservers de Vercel</strong> (delegas todo el DNS en Vercel) <span class="badge b-doc">DOC</span>.</p>
+    <ul>
+      <li>Si <strong>no</strong> tienes correo ni otros servicios en ese dominio, delegar es lo más sencillo.</li>
+      <li>Si <strong>ya usas correo u otros servicios</strong>, usa A/CNAME para no tocar el resto de registros.</li>
+    </ul>
+    <h4>C. Método A/CNAME</h4>
+    <ol>
+      <li>Abre el panel DNS de tu registrador (suele llamarse DNS, Zona DNS o Advanced DNS).</li>
+      <li>Crea los registros <strong>que Vercel te muestra para tu proyecto</strong>. La documentación cita como valores generales <code>76.76.21.21</code> (registro A para el apex) y <code>cname.vercel-dns-0.com</code> (CNAME para <code>www</code>), pero aconseja usar los valores específicos de tu proyecto, visibles en <strong>Settings → Domains</strong> al pulsar «Learn more» o con <code>vercel domains inspect</code> / <code>vercel domains verify</code> <span class="badge b-doc">DOC</span>.</li>
+      <li>Si ya existe un registro A/CNAME con el mismo nombre, <strong>edítalo</strong> en lugar de duplicarlo.</li>
+      <li>Guarda y espera la propagación.</li>
+    </ol>
+    <h4>D. Método nameservers de Vercel</h4>
+    <p>Cambia en el registrador los servidores de nombres a <code>ns1.vercel-dns.com</code> y <code>ns2.vercel-dns.com</code> <span class="badge b-parcial">DOC-PARCIAL</span> (confírmalos en tu panel). <strong>Atención:</strong> al delegar, Vercel pasa a gestionar toda la zona DNS; debes recrear en Vercel los registros que ya tenías (<strong>MX, TXT y cualquier otro</strong>) o perderás el correo.</p>
+    <h4>E. Verificar</h4>
+    <ol>
+      <li>Vuelve a <strong>Settings → Domains</strong>: el estado debe pasar a <strong>Valid Configuration</strong> cuando el DNS se propague.</li>
+      <li>Por CLI: <code>vercel domains verify ejemplo.com --project mi-primera-web</code> <span class="badge b-doc">DOC</span>.</li>
+      <li>Abre <code>https://ejemplo.com</code> y comprueba el candado. Vercel emite el certificado automáticamente tras verificar el DNS <span class="badge b-doc">DOC</span>.</li>
+    </ol>
+    <p><strong>Errores frecuentes:</strong></p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Síntoma</th><th>Causa</th><th>Solución</th></tr></thead>
+      <tbody>
+        <tr><td>Invalid Configuration persistente</td><td>El DNS no apunta a Vercel o aún no se propagó</td><td>Revisa los valores exactos; espera; usa <code>vercel domains verify</code></td></tr>
+        <tr><td>El dominio ya está en otra cuenta</td><td>Asociado a otro proyecto o equipo</td><td>Elimínalo allí o verifica la propiedad con el TXT que indique Vercel</td></tr>
+        <tr><td>Error de certificado HTTPS</td><td>DNS sin propagar o un registro CAA restringe la emisión</td><td>Espera; si usas CAA, permite <code>letsencrypt.org</code> <span class="badge b-parcial">DOC-PARCIAL</span></td></tr>
+        <tr><td>Dejó de funcionar el correo</td><td>Se borraron o perdieron los MX al delegar</td><td>Recrea los MX en el panel DNS</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <h3>Paso 8. Variables de entorno</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> guardar claves y ajustes fuera del código, por entorno.</p>
+    <ol>
+      <li>Dashboard → tu proyecto → <strong>Settings → Environment Variables</strong> <span class="badge b-doc">DOC</span>.</li>
+      <li>Pulsa <strong>Add Environment Variable</strong> (o el equivalente).</li>
+      <li>En <strong>Key</strong> escribe <code>SALUDO_NOMBRE</code>; en <strong>Value</strong>, <code>Mundo</code>. Elige el tipo <strong>Config</strong>, marca Production y Preview, y guarda.</li>
+      <li>Repite con <code>API_KEY_EJEMPLO</code> y un valor ficticio, tipo <strong>Secret</strong>.</li>
+      <li>Ve a <strong>Deployments</strong>, elige el último despliegue y usa <strong>Redeploy</strong>. Los cambios no afectan a despliegues ya hechos <span class="badge b-doc">DOC</span>.</li>
+    </ol>
+    <p><strong>Comprobación:</strong> las variables aparecen listadas; la de tipo Secret no deja ver su valor.</p>
+    <p><strong>Errores frecuentes:</strong></p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Error</th><th>Solución</th></tr></thead>
+      <tbody>
+        <tr><td>El código no ve la variable</td><td>¿Hiciste redeploy? ¿Marcaste el entorno correcto? ¿El nombre coincide exactamente, con mayúsculas?</td></tr>
+        <tr><td><code>undefined</code> en el navegador</td><td>Las variables normales solo existen en el servidor; para el navegador cada framework exige un prefijo específico (por ejemplo <code>NEXT_PUBLIC_</code> en Next.js), y todo lo que lleve ese prefijo es público</td></tr>
+        <tr><td>Se pegó un espacio al copiar el valor</td><td>Reescribe el valor sin espacios</td></tr>
+      </tbody>
+    </table></div>
+    <p><strong>Protege tus archivos locales.</strong> Crea un archivo <code>.gitignore</code> en la raíz del proyecto con:</p>
+    <div class="codewrap"><pre><code>.env
+.env.local
+.env.*.local
+.vercel
+node_modules</code></pre></div>
+    <p><strong>Por qué:</strong> indica a Git que no suba esos archivos. Los <code>.env*</code> contienen secretos; <code>.vercel</code> guarda identificadores locales; <code>node_modules</code> es enorme y se regenera.</p>
+  </div>
+
+  <h3>Paso 9. Tu primera API</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> crear una función de servidor que devuelva JSON.</p>
+    <p>En proyectos que no usan un framework con su propio sistema de rutas, crea una carpeta <code>api</code> en la raíz y coloca archivos de función dentro; cada archivo se convierte en una ruta <code>/api/&lt;nombre&gt;</code> <span class="badge b-parcial">DOC-PARCIAL</span>.</p>
+    <p>Crea <code>api/hola.js</code> con este contenido <span class="badge b-nop">NO PROBADO</span>:</p>
+    <div class="codewrap"><pre><code>// Una función de servidor muy simple.
+// "req" = petición recibida; "res" = respuesta que enviaremos.
+module.exports = (req, res) =&gt; {
+  res.status(200).json({ mensaje: "Hola desde una función de Vercel" });
+};</code></pre></div>
+    <ul>
+      <li><code>module.exports = (req, res) =&gt; { ... }</code>: entrega a Vercel una función que recibe la petición y la respuesta.</li>
+      <li><code>res.status(200)</code>: fija el código de estado a «correcto».</li>
+      <li><code>.json({...})</code>: envía un objeto como JSON.</li>
+    </ul>
+    <p>Tras desplegar, visita <code>https://TU-PROYECTO.vercel.app/api/hola</code>. Debe mostrar <code>{"mensaje":"Hola desde una función de Vercel"}</code>.</p>
+    <p><strong>Probar en local (opcional):</strong> en la carpeta del proyecto, ejecuta <code>vercel dev</code> (necesita CLI y <code>vercel link</code>) <span class="badge b-parcial">DOC-PARCIAL</span> y abre <code>http://localhost:3000/api/hola</code>. El puerto puede variar; mira la salida del comando.</p>
+    <p><strong>Límites relevantes</strong> <span class="badge b-doc">DOC</span>: el build tiene un máximo de 45 minutos; el tamaño total de variables de entorno por despliegue es de 64 KB. Memoria, duración máxima y tamaño de las funciones varían por plan: consulta la página oficial de límites.</p>
+    <p><strong>Errores:</strong> 404 → la carpeta <code>api</code> no está en la raíz o el archivo se llama distinto; 500 → error en el código, mira los registros; 504 → la función tardó más del máximo del plan.</p>
+  </div>
+
+  <h3>Paso 10 (opcional). La CLI de Vercel</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> controlar Vercel desde la terminal.</p>
+    <ol>
+      <li>Instala Node.js LTS desde <code>https://nodejs.org</code>. La documentación indica Node.js 18 o superior <span class="badge b-doc">DOC</span>.</li>
+      <li>Cierra y abre de nuevo la terminal. Comprueba con <code>node --version</code> y <code>npm --version</code>.</li>
+      <li>Instala la CLI: <code>npm i -g vercel</code> <span class="badge b-doc">DOC</span>.</li>
+      <li>Comprueba: <code>vercel --version</code>.</li>
+      <li>Inicia sesión: <code>vercel login</code> y confirma en el navegador. Comprueba con <code>vercel whoami</code>.</li>
+      <li>Entra en la carpeta del proyecto y vincula: <code>vercel link</code>.</li>
+      <li>Despliega a vista previa: <code>vercel</code>. Despliega a producción: <code>vercel --prod</code> <span class="badge b-doc">DOC</span>.</li>
+    </ol>
+    <div class="note warn"><p><strong>Windows:</strong> PowerShell puede bloquear scripts. Opciones seguras: usa <strong>CMD</strong> o consulta la ayuda de Microsoft sobre <em>ExecutionPolicy</em> antes de cambiar nada. No desactives políticas de seguridad sin entender el cambio.</p></div>
+    <p><strong>Comandos útiles:</strong></p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Comando</th><th>Función</th></tr></thead>
+      <tbody>
+        <tr><td><code>vercel env ls</code></td><td>Lista variables (nombres y entornos, no los valores)</td></tr>
+        <tr><td><code>vercel env add NOMBRE production</code></td><td>Añade una variable al entorno Production</td></tr>
+        <tr><td><code>vercel env pull .env.local</code></td><td>Descarga las variables de Development a un archivo local</td></tr>
+        <tr><td><code>vercel list</code></td><td>Lista despliegues recientes</td></tr>
+        <tr><td><code>vercel inspect &lt;url&gt; --logs</code></td><td>Detalles con registros de build</td></tr>
+        <tr><td><code>vercel logs &lt;url&gt;</code></td><td>Registros de ejecución</td></tr>
+        <tr><td><code>vercel rollback [url]</code></td><td>Vuelve a un despliegue anterior de producción</td></tr>
+        <tr><td><code>vercel promote &lt;url&gt;</code></td><td>Promueve un despliegue a producción</td></tr>
+      </tbody>
+    </table></div>
+    <p><strong>Seguridad:</strong> <code>vercel env pull</code> crea archivos con valores reales; añádelos a <code>.gitignore</code>. Nunca pegues tokens en capturas, repositorios o chats.</p>
+  </div>
+
+  <h2>Lista de comprobación del procedimiento</h2>
+  <ul class="checklist">
+    <li><input type="checkbox" id="pc1" data-check="proc1"><label for="pc1">Tengo cuenta de Vercel y veo el panel.</label></li>
+    <li><input type="checkbox" id="pc2" data-check="proc2"><label for="pc2">Mi <code>index.html</code> se ve bien en local.</label></li>
+    <li><input type="checkbox" id="pc3" data-check="proc3"><label for="pc3">He publicado con Vercel Drop o con GitHub.</label></li>
+    <li><input type="checkbox" id="pc4" data-check="proc4"><label for="pc4">He actualizado la web y he visto el nuevo despliegue.</label></li>
+    <li><input type="checkbox" id="pc5" data-check="proc5"><label for="pc5">He probado una rama y su vista previa.</label></li>
+    <li><input type="checkbox" id="pc6" data-check="proc6"><label for="pc6">Sé hacer Instant Rollback y sé que después hay que promover.</label></li>
+    <li><input type="checkbox" id="pc7" data-check="proc7"><label for="pc7">Tengo un dominio verificado con HTTPS (o sé el procedimiento exacto).</label></li>
+    <li><input type="checkbox" id="pc8" data-check="proc8"><label for="pc8">Tengo variables Config y Secret y sé que hay que redeploy.</label></li>
+    <li><input type="checkbox" id="pc9" data-check="proc9"><label for="pc9">He creado y probado una función en <code>/api</code>.</label></li>
+  </ul>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- PRÁCTICA -->
+<!-- ============================================================ -->
+<section id="panel-practica" role="tabpanel" aria-labelledby="tab-practica" hidden>
+
+  <h2>Práctica: cinco proyectos progresivos</h2>
+  <p>Todos los proyectos son <span class="badge b-nop">NO PROBADO</span>: el código es sencillo y coherente con la documentación, pero debes ejecutarlo y comparar resultados. Usa siempre valores ficticios.</p>
+
+  <h3>Proyecto 1. Tarjeta de presentación (nivel cero)</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> publicar una tarjeta personal con Vercel Drop.</p>
+    <p><strong>Qué necesitas:</strong> cuenta de Vercel, un editor de texto y un navegador.</p>
+    <ol>
+      <li>Crea la carpeta <code>proyecto1-tarjeta</code> en el escritorio.</li>
+      <li>Crea dentro <code>index.html</code> y pega el código siguiente. Cambia los textos por los tuyos.</li>
+      <li>Guarda y abre el archivo con el navegador para comprobar el resultado.</li>
+      <li>Entra en <code>https://vercel.com/drop</code>, arrastra la carpeta (o un <code>.zip</code>) y despliega con un nombre como <code>tarjeta-tunombre</code>.</li>
+      <li>Abre la URL resultante.</li>
+    </ol>
+    <div class="codewrap"><pre><code>&lt;!doctype html&gt;
+&lt;html lang="es"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;meta name="description" content="Tarjeta de presentación personal"&gt;
+  &lt;title&gt;Ana Ejemplo | Tarjeta de presentación&lt;/title&gt;
+  &lt;style&gt;
+    :root { --fondo: #f4f6fb; --texto: #1c2333; --acento: #2b5cff; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      background: var(--fondo); color: var(--texto);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    .tarjeta {
+      width: min(92vw, 28rem); background: #fff; padding: 2rem;
+      border-radius: 1rem; box-shadow: 0 8px 30px rgba(0,0,0,.08); text-align: center;
+    }
+    h1 { margin: 0 0 .25rem; font-size: 1.8rem; }
+    .rol { color: var(--acento); font-weight: 600; margin: 0 0 1rem; }
+    p { line-height: 1.6; }
+    a.boton {
+      display: inline-block; margin-top: 1rem; padding: .7rem 1.2rem;
+      background: var(--acento); color: #fff; border-radius: .5rem; text-decoration: none;
+    }
+    a.boton:hover { opacity: .9; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;main class="tarjeta"&gt;
+    &lt;h1&gt;Ana Ejemplo&lt;/h1&gt;
+    &lt;p class="rol"&gt;Aprendiendo a publicar en Internet&lt;/p&gt;
+    &lt;p&gt;Hola, esta es mi primera web publicada con Vercel. Aquí contaré lo que voy aprendiendo.&lt;/p&gt;
+    &lt;a class="boton" href="mailto:ana@ejemplo.com"&gt;Escríbeme&lt;/a&gt;
+  &lt;/main&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+    <p><strong>Explicación:</strong> <code>&lt;!doctype html&gt;</code> indica HTML moderno; <code>viewport</code> hace que se vea bien en móvil; <code>display: grid; place-items: center;</code> centra la tarjeta; <code>mailto:</code> abre el correo.</p>
+    <p><strong>Resultado esperado:</strong> una tarjeta centrada en una URL <code>https://tarjeta-tunombre.vercel.app</code>.</p>
+    <p><strong>Comprobaciones:</strong> se ve bien en móvil; aparece el candado HTTPS; el título de la pestaña es el esperado; abre en incógnito.</p>
+    <p><strong>Errores:</strong> 404 → falta <code>index.html</code> en la raíz; caracteres raros → guarda en UTF-8; estilos que no cargan → revisa que <code>&lt;style&gt;</code> esté bien cerrado.</p>
+  </div>
+
+  <h3>Proyecto 2. Sitio de varias páginas (principiante)</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> publicar un sitio de tres páginas con estilos compartidos, página 404 propia y URLs limpias.</p>
+    <p><strong>Estructura:</strong></p>
+    <pre><code>proyecto2-sitio/
+├── index.html
+├── sobre.html
+├── contacto.html
+├── 404.html
+├── estilos.css
+└── vercel.json</code></pre>
+    <p><strong><code>estilos.css</code></strong></p>
+    <div class="codewrap"><pre><code>* { box-sizing: border-box; }
+body {
+  margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color: #1c2333; background: #f7f8fb; line-height: 1.6;
+}
+header { background: #1c2333; color: #fff; padding: 1rem; }
+nav a { color: #fff; margin-right: 1rem; text-decoration: none; font-weight: 600; }
+nav a:hover { text-decoration: underline; }
+main { max-width: 42rem; margin: 2rem auto; padding: 0 1rem; }
+footer { text-align: center; color: #667; padding: 2rem 1rem; font-size: .9rem; }</code></pre></div>
+    <p><strong><code>index.html</code></strong></p>
+    <div class="codewrap"><pre><code>&lt;!doctype html&gt;
+&lt;html lang="es"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;title&gt;Mi sitio | Inicio&lt;/title&gt;
+  &lt;link rel="stylesheet" href="/estilos.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;header&gt;
+    &lt;nav&gt;
+      &lt;a href="/"&gt;Inicio&lt;/a&gt;
+      &lt;a href="/sobre"&gt;Sobre mí&lt;/a&gt;
+      &lt;a href="/contacto"&gt;Contacto&lt;/a&gt;
+    &lt;/nav&gt;
+  &lt;/header&gt;
+  &lt;main&gt;
+    &lt;h1&gt;Bienvenido&lt;/h1&gt;
+    &lt;p&gt;Este es un sitio de varias páginas publicado con Vercel.&lt;/p&gt;
+  &lt;/main&gt;
+  &lt;footer&gt;© Mi sitio de ejemplo&lt;/footer&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+    <p><strong><code>sobre.html</code></strong> y <strong><code>contacto.html</code></strong> son iguales cambiando el título y el contenido de <code>&lt;main&gt;</code>:</p>
+    <div class="codewrap"><pre><code>&lt;!-- sobre.html: cambia título y contenido --&gt;
+&lt;title&gt;Mi sitio | Sobre mí&lt;/title&gt;
+...
+&lt;main&gt;
+  &lt;h1&gt;Sobre mí&lt;/h1&gt;
+  &lt;p&gt;Estoy aprendiendo a publicar webs. Esta página explica quién soy y qué hago.&lt;/p&gt;
+&lt;/main&gt;
+
+&lt;!-- contacto.html: cambia título y contenido --&gt;
+&lt;title&gt;Mi sitio | Contacto&lt;/title&gt;
+...
+&lt;main&gt;
+  &lt;h1&gt;Contacto&lt;/h1&gt;
+  &lt;p&gt;Puedes escribirme a &lt;a href="mailto:contacto@ejemplo.com"&gt;contacto@ejemplo.com&lt;/a&gt; (dirección de ejemplo).&lt;/p&gt;
+&lt;/main&gt;</code></pre></div>
+    <p><strong><code>404.html</code></strong></p>
+    <div class="codewrap"><pre><code>&lt;!doctype html&gt;
+&lt;html lang="es"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;title&gt;Página no encontrada&lt;/title&gt;
+  &lt;link rel="stylesheet" href="/estilos.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;header&gt;&lt;nav&gt;&lt;a href="/"&gt;Volver al inicio&lt;/a&gt;&lt;/nav&gt;&lt;/header&gt;
+  &lt;main&gt;
+    &lt;h1&gt;Error 404&lt;/h1&gt;
+    &lt;p&gt;La página que buscas no existe o se ha movido.&lt;/p&gt;
+  &lt;/main&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+    <p><strong><code>vercel.json</code></strong></p>
+    <div class="codewrap"><pre><code>{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true
+}</code></pre></div>
+    <p><strong>Explicación:</strong> <code>estilos.css</code> se comparte con un solo enlace; <code>href="/sobre"</code> funciona sin <code>.html</code> gracias a <code>cleanUrls</code>; <code>404.html</code> es la página que se muestra cuando la ruta no existe.</p>
+    <p><strong>Procedimiento:</strong> crea los archivos, pruébalos en local y despliega con Vercel Drop o con Git. Prueba <code>/sobre</code>, <code>/contacto</code> y <code>/nada</code>.</p>
+    <p><strong>Errores:</strong> páginas sin estilo → <code>estilos.css</code> debe estar en la raíz; <code>/sobre</code> da 404 → falta <code>vercel.json</code> o el archivo se llama distinto; JSON rechazado → coma de más.</p>
+  </div>
+
+  <h3>Proyecto 3. GitHub + actualizaciones automáticas + rollback (intermedio)</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> que cada cambio en GitHub se publique solo, con vistas previas por rama y vuelta atrás.</p>
+    <ol>
+      <li>Crea en GitHub el repositorio <code>proyecto2-sitio</code> y sube los archivos del Proyecto 2 con <strong>uploading an existing file</strong>.</li>
+      <li>Añade un <code>.gitignore</code> con <code>node_modules</code>, <code>.vercel</code>, <code>.env</code>, <code>.env.local</code> y <code>.DS_Store</code>, y un <code>README.md</code> breve.</li>
+      <li>Importa el repositorio en <code>https://vercel.com/new</code> y despliega sin cambiar nada.</li>
+      <li>Crea una rama <code>cambio-inicio</code>, edita <code>index.html</code> y confirma en esa rama.</li>
+      <li>Comprueba el despliegue Preview en Vercel; la producción no cambia.</li>
+      <li>Abre un pull request: el bot de Vercel comenta con la vista previa.</li>
+      <li>Fusiona el PR y comprueba el despliegue de producción.</li>
+      <li><strong>Práctica de rollback:</strong> crea una rama <code>rotura</code>, borra una etiqueta de cierre en <code>index.html</code>, fusiónala, observa el problema y recupera con Instant Rollback. Después corrige en una rama nueva, fusiona y <strong>promueve</strong> el despliegue nuevo.</li>
+    </ol>
+    <p><strong>Criterio de evaluación:</strong> rama → Preview; PR → comentario; merge → Production; rollback practicado y entendido.</p>
+  </div>
+
+  <h3>Proyecto 4. API con variables de entorno (avanzado)</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> una página que llama a una API propia cuyo comportamiento depende de variables de entorno.</p>
+    <p><strong>Estructura:</strong></p>
+    <pre><code>proyecto4-api/
+├── api/
+│   ├── saludo.js
+│   └── estado.js
+├── index.html
+├── package.json
+├── .gitignore
+└── vercel.json</code></pre>
+    <p><strong><code>package.json</code></strong></p>
+    <div class="codewrap"><pre><code>{
+  "name": "proyecto4-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web estática con API en funciones de Vercel"
+}</code></pre></div>
+    <p><strong><code>.gitignore</code></strong></p>
+    <div class="codewrap"><pre><code>node_modules
+.vercel
+.env
+.env.local
+.env.*.local</code></pre></div>
+    <p><strong><code>vercel.json</code></strong></p>
+    <div class="codewrap"><pre><code>{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true
+}</code></pre></div>
+    <p><strong><code>api/saludo.js</code></strong></p>
+    <div class="codewrap"><pre><code>// API de saludo: recibe ?nombre=... y devuelve un saludo en JSON.
+// MENSAJE_BASE es una variable de entorno (tipo Config) definida en Vercel.
+module.exports = (req, res) =&gt; {
+  // 1) Leer el nombre de la URL. req.query contiene los parámetros (?nombre=Ana).
+  const nombreCrudo = (req.query &amp;&amp; req.query.nombre) || "visitante";
+
+  // 2) Limpiar y limitar el texto para evitar entradas absurdas.
+  const nombre = String(nombreCrudo).trim().slice(0, 40) || "visitante";
+
+  // 3) Leer la variable de entorno. Si no existe, usamos un valor por defecto
+  //    y avisamos en la respuesta (así se detecta si olvidaste configurarla).
+  const base = process.env.MENSAJE_BASE;
+  const configurada = Boolean(base);
+  const mensaje = (base || "Hola") + ", " + nombre + "!";
+
+  // 4) Responder con JSON y un código 200 (correcto).
+  res.status(200).json({
+    mensaje: mensaje,
+    variableMensajeBaseConfigurada: configurada
+  });
+};</code></pre></div>
+    <p><strong><code>api/estado.js</code></strong></p>
+    <div class="codewrap"><pre><code>// API de estado: indica si las variables necesarias están configuradas.
+// IMPORTANTE: nunca devuelve el valor de ninguna clave; solo true/false.
+module.exports = (req, res) =&gt; {
+  res.status(200).json({
+    servicio: "proyecto4-api",
+    entorno: process.env.VERCEL_ENV || "local",
+    variables: {
+      MENSAJE_BASE: Boolean(process.env.MENSAJE_BASE),
+      CLAVE_SECRETA_EJEMPLO: Boolean(process.env.CLAVE_SECRETA_EJEMPLO)
+    }
+  });
+};</code></pre></div>
+    <p><strong><code>index.html</code></strong></p>
+    <div class="codewrap"><pre><code>&lt;!doctype html&gt;
+&lt;html lang="es"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;title&gt;Proyecto 4 | Web con API&lt;/title&gt;
+  &lt;style&gt;
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; max-width: 36rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.6; }
+    input, button { font-size: 1rem; padding: .5rem .7rem; }
+    #resultado { margin-top: 1rem; padding: 1rem; background: #eef2ff; border-radius: .5rem; min-height: 3rem; }
+    .aviso { color: #a14; font-size: .9rem; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;Saludador con API&lt;/h1&gt;
+  &lt;p&gt;Escribe tu nombre y pulsa el botón. La página pide el saludo a una función de servidor.&lt;/p&gt;
+
+  &lt;label for="nombre"&gt;Tu nombre:&lt;/label&gt;
+  &lt;input id="nombre" type="text" maxlength="40" placeholder="Ana"&gt;
+  &lt;button id="boton" type="button"&gt;Saludar&lt;/button&gt;
+
+  &lt;div id="resultado" aria-live="polite"&gt;&lt;/div&gt;
+  &lt;p class="aviso" id="aviso"&gt;&lt;/p&gt;
+
+  &lt;script&gt;
+    const campo = document.getElementById("nombre");
+    const boton = document.getElementById("boton");
+    const resultado = document.getElementById("resultado");
+    const aviso = document.getElementById("aviso");
+
+    async function saludar() {
+      resultado.textContent = "Cargando…";
+      aviso.textContent = "";
+      try {
+        const nombre = encodeURIComponent(campo.value.trim());
+        const respuesta = await fetch("/api/saludo?nombre=" + nombre);
+        if (!respuesta.ok) { throw new Error("Error " + respuesta.status); }
+        const datos = await respuesta.json();
+        resultado.textContent = datos.mensaje;
+        if (!datos.variableMensajeBaseConfigurada) {
+          aviso.textContent = "Aviso: la variable MENSAJE_BASE no está configurada en este entorno.";
+        }
+      } catch (error) {
+        resultado.textContent = "No se pudo obtener el saludo.";
+        aviso.textContent = String(error.message);
+      }
+    }
+
+    boton.addEventListener("click", saludar);
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+    <p><strong>Explicación:</strong> cada archivo de <code>api/</code> se publica como ruta <code>/api/&lt;nombre&gt;</code>; <code>req.query.nombre</code> lee el parámetro; <code>process.env.MENSAJE_BASE</code> accede a la variable en el servidor; <code>fetch</code> hace la petición desde el navegador; <code>encodeURIComponent</code> codifica tildes y espacios; <code>estado.js</code> devuelve solo <code>true/false</code>, nunca el valor.</p>
+    <p><strong>Pasos:</strong></p>
+    <ol>
+      <li>Sube los archivos a un repositorio y impórtalo en Vercel con preset <strong>Other</strong>, sin build ni output.</li>
+      <li>Abre la URL y pulsa Saludar: verás «Hola, …!» con el aviso de variable no configurada.</li>
+      <li>Abre <code>/api/estado</code>: verás <code>false</code> en las dos variables.</li>
+      <li>En <strong>Settings → Environment Variables</strong> crea <code>MENSAJE_BASE</code> = <code>Buenos días</code> (Config) y <code>CLAVE_SECRETA_EJEMPLO</code> = <code>valor-ficticio-no-real-123</code> (Secret), en Production y Preview.</li>
+      <li>Haz <strong>Redeploy</strong>. Recarga: debe decir «Buenos días, Ana!» sin aviso, y <code>/api/estado</code> debe devolver <code>true</code> en ambas.</li>
+      <li>Prueba en una rama: en la vista previa, <code>entorno</code> debe ser <code>preview</code>.</li>
+    </ol>
+    <p><strong>Errores:</strong> 404 → la carpeta <code>api</code> no está en la raíz; la variable sigue en <code>false</code> → falta redeploy o entorno equivocado; 500 → error en el código, revisa los registros; la vista previa pide iniciar sesión → Deployment Protection.</p>
+  </div>
+
+  <h3>Proyecto 5. Nivel profesional</h3>
+  <div class="card">
+    <p><strong>Objetivo:</strong> llevar el Proyecto 4 a un estado profesional: dominio propio con HTTPS, cabeceras de seguridad, entornos separados, protección de vistas previas, observabilidad y mantenimiento documentado.</p>
+    <p><strong>Archivos nuevos:</strong> <code>api/salud.js</code>, <code>404.html</code>, <code>robots.txt</code>, <code>MANTENIMIENTO.md</code> y un <code>vercel.json</code> ampliado.</p>
+    <p><strong><code>api/salud.js</code></strong></p>
+    <div class="codewrap"><pre><code>// Comprobación de salud: sirve para monitores externos ("¿la API está viva?").
+// No revela información sensible.
+module.exports = (req, res) =&gt; {
+  res.setHeader("Cache-Control", "no-store");
+  res.status(200).json({ ok: true, hora: new Date().toISOString() });
+};</code></pre></div>
+    <p><strong><code>vercel.json</code> con cabeceras de seguridad</strong></p>
+    <div class="codewrap"><pre><code>{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    }
+  ]
+}</code></pre></div>
+    <p><strong>Fases:</strong></p>
+    <ol>
+      <li><strong>A.</strong> Añade los archivos en una rama, abre un PR y comprueba en la vista previa: <code>/</code>, <code>/api/saludo?nombre=Ana</code>, <code>/api/estado</code>, <code>/api/salud</code> y una ruta inexistente (404 propio). Revisa las cabeceras con F12 → Red. Fusiona.</li>
+      <li><strong>B.</strong> Define variables distintas para Production y Preview. Redeploy.</li>
+      <li><strong>C.</strong> Añade el dominio (paso 7 del procedimiento), configura DNS sin borrar MX/TXT y comprueba HTTPS.</li>
+      <li><strong>D.</strong> Revisa Deployment Protection de vistas previas, miembros y roles, y protege <code>main</code> con PR obligatorio.</li>
+      <li><strong>E.</strong> Activa Web Analytics si lo necesitas, revisa límites y consumo, y mira los registros tras 24 horas.</li>
+      <li><strong>F.</strong> Simulacro: rompe una rama, fusiónala, observa el fallo, recupera con Instant Rollback y promueve el despliegue corregido. Anota el tiempo.</li>
+    </ol>
+    <p><strong><code>MANTENIMIENTO.md</code> (plantilla)</strong></p>
+    <div class="codewrap"><pre><code># Procedimiento de mantenimiento
+
+## Cada semana
+- Revisar Vercel > Usage (consumo) y alertas de gasto.
+- Revisar errores en los registros del proyecto.
+- Comprobar https://TU-DOMINIO/api/salud (debe responder ok: true).
+
+## Cada mes
+- Revisar miembros del equipo y permisos.
+- Actualizar dependencias si las hay (npm audit) y probar en vista previa.
+- Comprobar caducidad del dominio en el registrador.
+
+## Cada trimestre
+- Rotar claves y tokens (proveedor -> variable Secret -> redeploy -> revocar la antigua).
+
+## Antes de publicar
+- Abrir PR; probar la vista previa; revisar variables; fusionar solo con aprobación.
+
+## Si producción falla
+1. Instant Rollback al despliegue anterior bueno.
+2. Revisar registros.
+3. Corregir en rama; probar en vista previa.
+4. Promover el despliegue nuevo (restaura la asignación automática).
+5. Anotar causa y prevención.
+
+## Credencial expuesta
+1. Revocar en el proveedor. 2. Crear nueva. 3. Guardar como Secret. 4. Redeploy. 5. Revisar uso anterior.</code></pre></div>
+  </div>
+
+  <h2>Itinerario de 30 días (45–90 minutos al día)</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Etapa</th><th>Días</th><th>Objetivo principal</th><th>Resultado</th></tr></thead>
+      <tbody>
+        <tr><td>1. Fundamentos</td><td>1–5</td><td>Cuenta, conceptos, primera web, Vercel Drop y Proyecto 1</td><td>Web pública con HTTPS</td></tr>
+        <tr><td>2. GitHub y despliegues</td><td>6–10</td><td>Repositorio, importación, actualización, ramas, PR y rollback</td><td>Proyecto 3 practicado</td></tr>
+        <tr><td>3. Dominio y configuración</td><td>11–15</td><td>DNS, dominio, variables de entorno, <code>vercel.json</code> básico</td><td>Proyecto 2 completo</td></tr>
+        <tr><td>4. APIs e integraciones</td><td>16–20</td><td>Frameworks, función de servidor, API con variables, datos e IA</td><td>Proyecto 4 completo</td></tr>
+        <tr><td>5. Seguridad y diagnóstico</td><td>21–25</td><td>Seguridad, filtración simulada, analítica, costes, resolución de fallos</td><td>Incidencias resueltas con notas</td></tr>
+        <tr><td>6. Profesional</td><td>26–30</td><td>Cabeceras, CLI, equipos, Proyecto 5 y evaluación</td><td>Aplicación profesional documentada</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Autoevaluación final</h2>
+  <ul class="checklist">
+    <li><input type="checkbox" id="ae1" data-check="auto1"><label for="ae1">Publicar una web nueva sin ayuda.</label></li>
+    <li><input type="checkbox" id="ae2" data-check="auto2"><label for="ae2">Actualizarla con Git y vista previa.</label></li>
+    <li><input type="checkbox" id="ae3" data-check="auto3"><label for="ae3">Configurar un dominio sin perder el correo.</label></li>
+    <li><input type="checkbox" id="ae4" data-check="auto4"><label for="ae4">Gestionar variables sin exponer secretos.</label></li>
+    <li><input type="checkbox" id="ae5" data-check="auto5"><label for="ae5">Crear y depurar una API.</label></li>
+    <li><input type="checkbox" id="ae6" data-check="auto6"><label for="ae6">Volver atrás ante un fallo.</label></li>
+    <li><input type="checkbox" id="ae7" data-check="auto7"><label for="ae7">Revisar costes y límites.</label></li>
+    <li><input type="checkbox" id="ae8" data-check="auto8"><label for="ae8">Explicar los riesgos de seguridad.</label></li>
+  </ul>
+  <p>Si has marcado «Sí» en 7 o más, estás listo para trabajar de forma autónoma.</p>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- ERRORES -->
+<!-- ============================================================ -->
+<section id="panel-errores" role="tabpanel" aria-labelledby="tab-errores" hidden>
+
+  <h2>Resolución de problemas por síntomas</h2>
+  <p><strong>Método:</strong> lee el mensaje exacto; comprueba lo más probable primero; cambia <strong>una cosa cada vez</strong>; verifica; si no basta, aplica la alternativa.</p>
+
+  <details class="card" open>
+    <summary>Error de compilación (build failed)</summary>
+    <div class="details-body">
+      <p><strong>Síntoma:</strong> el despliegue termina en Error y el registro acaba con «Build failed».</p>
+      <p><strong>Causas posibles:</strong> error en el código; dependencia ausente; comando de build erróneo; variable de entorno ausente; versión de Node distinta.</p>
+      <p><strong>Comprobaciones:</strong> abre el registro de build y busca la <strong>primera</strong> línea de error; ejecuta el build en local (<code>npm run build</code>).</p>
+      <p><strong>Solución:</strong> corrige lo que indica esa línea y sube el cambio. Como alternativa, haz Redeploy <strong>sin</strong> caché de build <span class="badge b-doc">DOC</span>.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Página en blanco o 404</summary>
+    <div class="details-body">
+      <p><strong>Causas:</strong> falta <code>index.html</code> en la raíz; framework mal detectado; Output Directory incorrecto; el build no genera la carpeta esperada.</p>
+      <p><strong>Comprobaciones:</strong> mira <strong>Framework Preset</strong> y <strong>Output Directory</strong>; ejecuta el build en local y observa qué carpeta aparece.</p>
+      <p><strong>Solución:</strong> elige el preset correcto (o «Other» para HTML puro); ajusta la carpeta de salida; redeploy.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Variables de entorno: <code>undefined</code> o error de conexión</summary>
+    <div class="details-body">
+      <p><strong>Causa confirmada:</strong> los cambios solo afectan a <strong>despliegues nuevos</strong>; la variable puede estar en otro entorno <span class="badge b-doc">DOC</span>.</p>
+      <p><strong>Comprobaciones:</strong> <code>vercel env ls</code>; panel → Environment Variables; nombre exacto, con mayúsculas.</p>
+      <p><strong>Solución:</strong> añade o corrige la variable y <strong>redeploy</strong>. Si es del navegador, revisa el prefijo público de tu framework.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>El dominio no funciona</summary>
+    <div class="details-body">
+      <ol>
+        <li>¿Estado en Vercel <strong>Valid Configuration</strong>? Si no, revisa los registros.</li>
+        <li>¿Has esperado la propagación? Prueba desde otra red o el móvil con datos.</li>
+        <li>¿Hay un registro duplicado o contradictorio?</li>
+        <li>¿El dominio está asociado a <strong>este</strong> proyecto y al despliegue de producción?</li>
+        <li>¿Hay protección de despliegue que pida iniciar sesión?</li>
+        <li>Ejecuta <code>vercel domains verify ejemplo.com --project NOMBRE</code>.</li>
+      </ol>
+      <p><strong>Alternativa:</strong> usa temporalmente la dirección <code>.vercel.app</code> para confirmar que el problema es solo del dominio.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Error HTTPS</summary>
+    <div class="details-body">
+      <p><strong>Causas:</strong> Vercel emite el certificado tras verificar el DNS <span class="badge b-doc">DOC</span>; el DNS puede no haberse propagado; un registro CAA puede impedir la emisión; puede quedar un certificado antiguo del proveedor.</p>
+      <p><strong>Comprobaciones:</strong> estado del dominio; <code>vercel certs ls</code>; registros CAA.</p>
+      <p><strong>Solución:</strong> corrige el DNS, espera y, si usas CAA, permite al emisor. Como alternativa, elimina y vuelve a añadir el dominio en el proyecto.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>El repositorio no aparece al importar</summary>
+    <div class="details-body">
+      <p><strong>Causas confirmadas <span class="badge b-doc">DOC</span>:</strong> no eres Owner del repositorio personal; eres Outside Collaborator de una organización; equipo Hobby con repositorio de organización; la app de Vercel no tiene acceso a ese repositorio.</p>
+      <p><strong>Solución:</strong> concede acceso a la app de Vercel para ese repositorio; pide ser Member u Owner; usa un repositorio personal. Si cambiaste de cuenta de GitHub, cierra sesión en GitHub y reinicia el proceso.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Despliegue bloqueado o en espera</summary>
+    <div class="details-body">
+      <p><strong>Causas:</strong> un PR desde un <strong>fork</strong> sin autorizar; el autor del commit no es miembro del equipo; producción en espera («staged»).</p>
+      <p><strong>Solución:</strong> autoriza el despliegue (propietario o miembro) o promueve manualmente. Como alternativa, añade al colaborador al equipo.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Tras un rollback, los cambios nuevos no llegan a producción</summary>
+    <div class="details-body">
+      <p><strong>Causa:</strong> el rollback desactiva la asignación automática de dominios de producción <span class="badge b-parcial">DOC-PARCIAL</span>.</p>
+      <p><strong>Solución:</strong> promueve un despliegue nuevo (<code>vercel promote &lt;url&gt;</code>) para restaurar el comportamiento normal.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Errores de API: 4xx y 5xx</summary>
+    <div class="details-body">
+      <div class="tablewrap"><table>
+        <thead><tr><th>Código</th><th>Significado</th><th>Qué mirar</th></tr></thead>
+        <tbody>
+          <tr><td>400</td><td>Petición mal formada</td><td>Datos enviados</td></tr>
+          <tr><td>401/403</td><td>Sin permiso</td><td>Claves, autenticación, protección</td></tr>
+          <tr><td>404</td><td>No existe</td><td>Ruta y carpeta <code>api</code></td></tr>
+          <tr><td>405</td><td>Método no permitido</td><td>GET frente a POST</td></tr>
+          <tr><td>500</td><td>Error en tu código</td><td>Registros de la función</td></tr>
+          <tr><td>504</td><td>Tiempo agotado</td><td>Límites de duración</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Funciona en local, pero falla en producción</summary>
+    <div class="details-body">
+      <p><strong>Causas posibles:</strong> variables distintas; versión de Node distinta; un archivo ignorado por <code>.gitignore</code> que se necesita; mayúsculas y minúsculas distintas en nombres de archivo (Linux distingue, Windows no); rutas absolutas del PC.</p>
+      <p><strong>Solución:</strong> iguala entornos; renombra archivos con el mismo uso de mayúsculas que en el código. Reproduce con <code>vercel pull</code> + <code>vercel build</code> o con <code>vercel dev</code>.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Ves una versión antigua (caché)</summary>
+    <div class="details-body">
+      <p><strong>Causas:</strong> caché del navegador; cabeceras <code>Cache-Control</code>; redirecciones permanentes guardadas.</p>
+      <p><strong>Comprobaciones:</strong> ventana de incógnito; actualización forzada (<code>Ctrl + F5</code>); revisa cabeceras en <code>vercel.json</code>.</p>
+      <p><strong>Solución:</strong> acorta la caché de las rutas que cambian; usa nombres nuevos para recursos con caché larga. Como alternativa, Redeploy sin caché de build <span class="badge b-doc">DOC</span>.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Consumo o factura inesperados</summary>
+    <div class="details-body">
+      <p><strong>Causas posibles:</strong> bucle de llamadas a tu API; bots; imágenes enormes; builds frecuentes; app con IA sin límites.</p>
+      <p><strong>Comprobaciones:</strong> panel de <strong>Usage</strong> por producto y proyecto.</p>
+      <p><strong>Solución:</strong> limita, cachea, optimiza y pausa lo que no uses; configura topes o alertas de gasto donde existan.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Errores de permisos</summary>
+    <div class="details-body">
+      <p><strong>Causa:</strong> tu rol en el equipo no permite esa acción <span class="badge b-parcial">DOC-PARCIAL</span>.</p>
+      <p><strong>Solución:</strong> pide a un Owner que haga el cambio o que ajuste tu rol. Como alternativa, usa un grupo de acceso con permisos específicos.</p>
+    </div>
+  </details>
+
+  <h2>Tabla rápida: síntoma y primer sitio donde mirar</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Síntoma</th><th>Primer sitio donde mirar</th></tr></thead>
+      <tbody>
+        <tr><td>Error al desplegar</td><td>Registro de build</td></tr>
+        <tr><td>Página en blanco</td><td>Preset y Output Directory</td></tr>
+        <tr><td>404 en rutas</td><td><code>index.html</code> en la raíz; <code>cleanUrls</code>; carpeta <code>api</code></td></tr>
+        <tr><td><code>undefined</code></td><td>Variables de entorno y redeploy</td></tr>
+        <tr><td>Dominio sin funcionar</td><td>Estado en <strong>Settings → Domains</strong></td></tr>
+        <tr><td>HTTPS roto</td><td>DNS y CAA</td></tr>
+        <tr><td>Versión antigua</td><td>Caché del navegador</td></tr>
+        <tr><td>Factura alta</td><td><strong>Usage</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- RESUMEN -->
+<!-- ============================================================ -->
+<section id="panel-resumen" role="tabpanel" aria-labelledby="tab-resumen" hidden>
+
+  <h2>Resumen: lo esencial en diez reglas</h2>
+  <ol>
+    <li>El <strong>primer despliegue</strong> de un proyecto nuevo es siempre producción.</li>
+    <li>Usa <strong>ramas y vistas previas</strong> para probar antes de publicar.</li>
+    <li>Los cambios en <strong>variables de entorno</strong> solo se aplican a despliegues nuevos: haz redeploy.</li>
+    <li>Tras un <strong>rollback</strong>, promueve un despliegue nuevo para reactivar la publicación automática.</li>
+    <li>Nunca pongas claves en el código ni en el navegador: usa variables <strong>Secret</strong> en el servidor.</li>
+    <li>Nunca borres registros DNS MX o TXT sin saber qué hacen.</li>
+    <li>El plan <strong>Hobby</strong> es solo para uso personal no comercial.</li>
+    <li>Los precios y límites cambian: compruébalos en las páginas oficiales antes de contratar.</li>
+    <li>Lee el registro de build <strong>de abajo arriba</strong> y cambia una sola cosa cada vez.</li>
+    <li>Documenta tu procedimiento de publicación y de incidentes: otra persona debería poder seguirlo.</li>
+  </ol>
+
+  <h2>Lista de comprobación antes de desplegar</h2>
+  <ul class="checklist">
+    <li><input type="checkbox" id="cd1" data-check="dep1"><label for="cd1">El proyecto funciona en local o en la vista previa.</label></li>
+    <li><input type="checkbox" id="cd2" data-check="dep2"><label for="cd2"><code>index.html</code> o el build correcto está en la raíz.</label></li>
+    <li><input type="checkbox" id="cd3" data-check="dep3"><label for="cd3">No hay claves en el código ni en archivos <code>.env</code> subidos.</label></li>
+    <li><input type="checkbox" id="cd4" data-check="dep4"><label for="cd4"><code>.gitignore</code> incluye <code>.env*</code>, <code>.vercel</code> y <code>node_modules</code>.</label></li>
+    <li><input type="checkbox" id="cd5" data-check="dep5"><label for="cd5">Las variables necesarias existen en el entorno correcto.</label></li>
+    <li><input type="checkbox" id="cd6" data-check="dep6"><label for="cd6">El framework y los comandos de build son correctos.</label></li>
+    <li><input type="checkbox" id="cd7" data-check="dep7"><label for="cd7">Los enlaces internos funcionan.</label></li>
+    <li><input type="checkbox" id="cd8" data-check="dep8"><label for="cd8">He probado en el móvil.</label></li>
+  </ul>
+
+  <h2>Lista de comprobación antes de publicar en producción</h2>
+  <ul class="checklist">
+    <li><input type="checkbox" id="cp1" data-check="prod1"><label for="cp1">La vista previa se revisó y aprobó.</label></li>
+    <li><input type="checkbox" id="cp2" data-check="prod2"><label for="cp2">Variables de Production correctas y distintas de las de pruebas.</label></li>
+    <li><input type="checkbox" id="cp3" data-check="prod3"><label for="cp3">Rama de producción protegida; cambio fusionado por PR.</label></li>
+    <li><input type="checkbox" id="cp4" data-check="prod4"><label for="cp4">Dominio verificado y HTTPS válido.</label></li>
+    <li><input type="checkbox" id="cp5" data-check="prod5"><label for="cp5">Plan adecuado al uso (comercial ≠ Hobby).</label></li>
+    <li><input type="checkbox" id="cp6" data-check="prod6"><label for="cp6">Sé cuál es el despliegue anterior bueno para volver atrás.</label></li>
+    <li><input type="checkbox" id="cp7" data-check="prod7"><label for="cp7">Registros revisados tras el despliegue.</label></li>
+    <li><input type="checkbox" id="cp8" data-check="prod8"><label for="cp8">Alguien sabe cómo actuar si falla.</label></li>
+  </ul>
+
+  <h2>Lista de comprobación de seguridad</h2>
+  <ul class="checklist">
+    <li><input type="checkbox" id="cs1" data-check="seg1"><label for="cs1">Verificación en dos pasos en GitHub, correo y registrador.</label></li>
+    <li><input type="checkbox" id="cs2" data-check="seg2"><label for="cs2">Secretos como <strong>Secret</strong> en Vercel; ninguno en el código.</label></li>
+    <li><input type="checkbox" id="cs3" data-check="seg3"><label for="cs3">Ninguna clave en el navegador ni con prefijo público.</label></li>
+    <li><input type="checkbox" id="cs4" data-check="seg4"><label for="cs4">Permisos de GitHub limitados a los repositorios necesarios.</label></li>
+    <li><input type="checkbox" id="cs5" data-check="seg5"><label for="cs5">Miembros del equipo revisados; pocos Owners.</label></li>
+    <li><input type="checkbox" id="cs6" data-check="seg6"><label for="cs6">Vistas previas protegidas según el plan.</label></li>
+    <li><input type="checkbox" id="cs7" data-check="seg7"><label for="cs7">Dependencias auditadas y actualizadas.</label></li>
+    <li><input type="checkbox" id="cs8" data-check="seg8"><label for="cs8">Cabeceras de seguridad en <code>vercel.json</code>.</label></li>
+    <li><input type="checkbox" id="cs9" data-check="seg9"><label for="cs9">Procedimiento de credencial expuesta conocido.</label></li>
+    <li><input type="checkbox" id="cs10" data-check="seg10"><label for="cs10">Copias de seguridad de datos importantes fuera de Vercel.</label></li>
+  </ul>
+
+  <h2>Lista de comprobación de costes</h2>
+  <ul class="checklist">
+    <li><input type="checkbox" id="cc1" data-check="cost1"><label for="cc1">Plan correcto (Hobby solo personal no comercial).</label></li>
+    <li><input type="checkbox" id="cc2" data-check="cost2"><label for="cc2">Revisé las páginas oficiales de límites y precios hoy.</label></li>
+    <li><input type="checkbox" id="cc3" data-check="cost3"><label for="cc3">Revisé <strong>Usage</strong> esta semana.</label></li>
+    <li><input type="checkbox" id="cc4" data-check="cost4"><label for="cc4">Hay topes o alertas de gasto donde existan.</label></li>
+    <li><input type="checkbox" id="cc5" data-check="cost5"><label for="cc5">Imágenes optimizadas y caché configurada.</label></li>
+    <li><input type="checkbox" id="cc6" data-check="cost6"><label for="cc6">Servicios de terceros con costes entendidos.</label></li>
+    <li><input type="checkbox" id="cc7" data-check="cost7"><label for="cc7">Proyectos y despliegues no usados eliminados.</label></li>
+    <li><input type="checkbox" id="cc8" data-check="cost8"><label for="cc8">Fecha de renovación del dominio anotada.</label></li>
+  </ul>
+
+  <h2>Comandos esenciales</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Comando</th><th>Dónde ejecutarlo</th><th>Qué hace</th></tr></thead>
+      <tbody>
+        <tr><td><code>node --version</code></td><td>Cualquier carpeta</td><td>Muestra la versión de Node.js</td></tr>
+        <tr><td><code>npm i -g vercel</code></td><td>Cualquier carpeta</td><td>Instala la CLI de Vercel</td></tr>
+        <tr><td><code>vercel login</code></td><td>Cualquier carpeta</td><td>Inicia sesión</td></tr>
+        <tr><td><code>vercel whoami</code></td><td>Cualquier carpeta</td><td>Muestra la cuenta activa</td></tr>
+        <tr><td><code>vercel link</code></td><td>Carpeta del proyecto</td><td>Vincula la carpeta a un proyecto</td></tr>
+        <tr><td><code>vercel</code></td><td>Carpeta del proyecto</td><td>Despliega a vista previa</td></tr>
+        <tr><td><code>vercel --prod</code></td><td>Carpeta del proyecto</td><td>Despliega a producción</td></tr>
+        <tr><td><code>vercel list</code></td><td>Carpeta del proyecto</td><td>Lista despliegues</td></tr>
+        <tr><td><code>vercel inspect URL --logs</code></td><td>Cualquier carpeta</td><td>Detalles y registros de build</td></tr>
+        <tr><td><code>vercel env pull .env.local</code></td><td>Carpeta del proyecto</td><td>Descarga variables de Development</td></tr>
+        <tr><td><code>vercel dev</code></td><td>Carpeta del proyecto</td><td>Servidor local de pruebas</td></tr>
+        <tr><td><code>vercel rollback</code></td><td>Carpeta del proyecto</td><td>Vuelve al despliegue anterior de producción</td></tr>
+        <tr><td><code>vercel promote URL</code></td><td>Carpeta del proyecto</td><td>Promueve un despliegue a producción</td></tr>
+        <tr><td><code>git status</code></td><td>Carpeta del repositorio</td><td>Muestra cambios</td></tr>
+        <tr><td><code>git add ARCHIVO</code> / <code>git commit -m "mensaje"</code></td><td>Carpeta del repositorio</td><td>Prepara y registra cambios</td></tr>
+        <tr><td><code>git push</code></td><td>Carpeta del repositorio</td><td>Sube cambios a GitHub</td></tr>
+        <tr><td><code>git switch -c RAMA</code></td><td>Carpeta del repositorio</td><td>Crea y cambia de rama</td></tr>
+        <tr><td><code>git revert HEAD</code></td><td>Carpeta del repositorio</td><td>Deshace el último commit con un commit nuevo</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><small>Comprueba siempre <code>vercel help</code> en tu versión: los comandos pueden cambiar.</small></p>
+
+  <h2>Preguntas frecuentes</h2>
+  <details class="card">
+    <summary>¿Necesito saber programar para usar Vercel?</summary>
+    <div class="details-body"><p>No para publicar una web ya hecha (Vercel Drop o GitHub). Sí necesitarás entender conceptos básicos para APIs y frameworks.</p></div>
+  </details>
+  <details class="card">
+    <summary>¿Vercel es gratis?</summary>
+    <div class="details-body"><p>Existe el plan <strong>Hobby</strong>, gratuito, para uso personal no comercial y con límites <span class="badge b-doc">DOC</span>. Otros servicios añadidos pueden costar. Consulta la página oficial de precios.</p></div>
+  </details>
+  <details class="card">
+    <summary>¿Puedo usar mi propio dominio?</summary>
+    <div class="details-body"><p>Sí. El dominio se paga al registrador; Vercel solo gestiona la web y el certificado.</p></div>
+  </details>
+  <details class="card">
+    <summary>¿Qué pasa si publico una clave por error?</summary>
+    <div class="details-body"><p>Revócala de inmediato en el proveedor, crea una nueva, guárdala como Secret, haz redeploy y revisa el uso de la antigua.</p></div>
+  </details>
+  <details class="card">
+    <summary>¿Puedo volver a una versión anterior?</summary>
+    <div class="details-body"><p>Sí, con Instant Rollback. Recuerda promover después un despliegue nuevo para restaurar la publicación automática <span class="badge b-parcial">DOC-PARCIAL</span>.</p></div>
+  </details>
+  <details class="card">
+    <summary>¿Por qué mi cambio de variable no se nota?</summary>
+    <div class="details-body"><p>Porque solo afecta a despliegues nuevos: haz redeploy <span class="badge b-doc">DOC</span>.</p></div>
+  </details>
+  <details class="card">
+    <summary>¿Puedo publicar una app creada con IA?</summary>
+    <div class="details-body"><p>Sí, siempre que revises claves y seguridad. No pases a producción código que no entiendas.</p></div>
+  </details>
+  <details class="card">
+    <summary>¿Vercel gestiona mi correo?</summary>
+    <div class="details-body"><p>No. El correo de tu dominio lo gestiona otro proveedor; mantén los registros MX.</p></div>
+  </details>
+
+  <h2>Plantillas reutilizables</h2>
+  <p><strong>Mensaje de commit</strong></p>
+  <div class="codewrap"><pre><code>Tipo: descripción corta en presente
+
+Tipos habituales: Añade, Corrige, Cambia, Elimina, Documenta
+Ejemplo: Corrige el enlace de contacto</code></pre></div>
+  <p><strong>Descripción de pull request</strong></p>
+  <div class="codewrap"><pre><code>## Qué cambia
+(una o dos frases)
+
+## Cómo probarlo
+1. Abrir la vista previa de Vercel.
+2. Comprobar ...
+
+## Riesgos
+(qué puede salir mal y cómo volver atrás)
+
+## Variables nuevas
+(ninguna / nombres y entorno; nunca valores)</code></pre></div>
+  <p><strong>Registro de incidente</strong></p>
+  <div class="codewrap"><pre><code>## Incidente AAAA-MM-DD
+- Detección:
+- Impacto:
+- Mitigación (rollback u otra):
+- Causa:
+- Corrección:
+- Prevención:</code></pre></div>
+  <p><strong>Prompt para pedir ayuda a una IA sin exponer secretos</strong></p>
+  <div class="codewrap"><pre><code>Estoy publicando un proyecto en Vercel. Mi framework es [framework].
+Este es el mensaje de error del registro de build (sin claves ni datos personales):
+[pegar el error]
+Quiero: 1) una explicación sencilla de la causa, 2) pasos para arreglarlo,
+3) cómo comprobar que quedó arreglado. No uses comandos que borren datos.</code></pre></div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- FUENTES -->
+<!-- ============================================================ -->
+<section id="panel-fuentes" role="tabpanel" aria-labelledby="tab-fuentes" hidden>
+
+  <h2>Fuentes y método</h2>
+  <p>Este tutorial transforma pedagógicamente la guía <em>«Guía definitiva Vercel para Dummies»</em> de Rubén Sbarsky, que a su vez se basa en documentación oficial de Vercel consultada el 16 de octubre de 2026. Se conservan sus etiquetas de verificación y sus advertencias sobre precios, límites e interfaz cambiante.</p>
+
+  <div class="note warn">
+    <p><strong>Lo que la fuente declara:</strong> leyó completas 14 páginas oficiales y otras solo en fragmentos; no pudo recorrer libremente el mapa del sitio; no ejecutó comandos ni desplegó proyectos; encontró cifras distintas para algunos precios en copias diferentes de la página de precios. Por eso aquí solo se citan como firmes los datos de las páginas leídas completas y se remite siempre a la página oficial vigente.</p>
+  </div>
+
+  <h2>Enlaces oficiales por tema</h2>
+  <h3>Inicio y proyectos</h3>
+  <ul>
+    <li><a href="https://vercel.com/docs" target="_blank" rel="noopener">Documentación de Vercel</a></li>
+    <li><a href="https://vercel.com/docs/getting-started-with-vercel" target="_blank" rel="noopener">Getting started with Vercel</a></li>
+    <li><a href="https://vercel.com/docs/projects" target="_blank" rel="noopener">Projects overview</a></li>
+    <li><a href="https://vercel.com/docs/projects/deploy-from-cli" target="_blank" rel="noopener">Deploying a project from the CLI</a></li>
+    <li><a href="https://vercel.com/docs/drop" target="_blank" rel="noopener">Vercel Drop</a></li>
+    <li><a href="https://vercel.com/new" target="_blank" rel="noopener">Nuevo proyecto</a></li>
+    <li><a href="https://vercel.com/templates" target="_blank" rel="noopener">Plantillas</a></li>
+  </ul>
+  <h3>Git y despliegues</h3>
+  <ul>
+    <li><a href="https://vercel.com/docs/git/vercel-for-github" target="_blank" rel="noopener">Vercel para GitHub</a></li>
+    <li><a href="https://vercel.com/docs/deployments/environments" target="_blank" rel="noopener">Environments</a></li>
+    <li><a href="https://vercel.com/docs/deployments/managing-deployments" target="_blank" rel="noopener">Managing Deployments</a></li>
+    <li><a href="https://vercel.com/docs/instant-rollback" target="_blank" rel="noopener">Instant Rollback</a></li>
+    <li><a href="https://vercel.com/docs/deployments/promoting-a-deployment" target="_blank" rel="noopener">Promoting Deployments</a></li>
+    <li><a href="https://git-scm.com/doc" target="_blank" rel="noopener">Documentación de Git</a></li>
+    <li><a href="https://docs.github.com" target="_blank" rel="noopener">GitHub Docs</a></li>
+  </ul>
+  <h3>Variables, dominios y CLI</h3>
+  <ul>
+    <li><a href="https://vercel.com/docs/environment-variables" target="_blank" rel="noopener">Environment variables</a></li>
+    <li><a href="https://vercel.com/docs/environment-variables/managing-environment-variables" target="_blank" rel="noopener">Managing environment variables</a></li>
+    <li><a href="https://vercel.com/docs/environment-variables/sensitive-environment-variables" target="_blank" rel="noopener">Config and Secret environment variables</a></li>
+    <li><a href="https://vercel.com/docs/domains/set-up-custom-domain" target="_blank" rel="noopener">Setting up a custom domain</a></li>
+    <li><a href="https://vercel.com/docs/domains/working-with-domains/add-a-domain" target="_blank" rel="noopener">Adding &amp; Configuring a Custom Domain</a></li>
+    <li><a href="https://vercel.com/docs/cli" target="_blank" rel="noopener">Vercel CLI</a></li>
+  </ul>
+  <h3>Funciones, datos e IA</h3>
+  <ul>
+    <li><a href="https://vercel.com/docs/functions" target="_blank" rel="noopener">Vercel Functions</a></li>
+    <li><a href="https://vercel.com/docs/marketplace-storage" target="_blank" rel="noopener">Storage on Vercel Marketplace</a></li>
+    <li><a href="https://vercel.com/docs/ai-gateway" target="_blank" rel="noopener">AI Gateway</a></li>
+    <li><a href="https://vercel.com/docs/ai-sdk" target="_blank" rel="noopener">AI SDK</a></li>
+  </ul>
+  <h3>Seguridad, rendimiento y configuración</h3>
+  <ul>
+    <li><a href="https://vercel.com/docs/deployment-protection" target="_blank" rel="noopener">Deployment Protection</a></li>
+    <li><a href="https://vercel.com/docs/rbac/access-roles" target="_blank" rel="noopener">Access roles</a></li>
+    <li><a href="https://vercel.com/docs/rbac/access-groups" target="_blank" rel="noopener">Access groups</a></li>
+    <li><a href="https://vercel.com/docs/analytics/limits-and-pricing" target="_blank" rel="noopener">Web Analytics: limits and pricing</a></li>
+    <li><a href="https://vercel.com/docs/speed-insights/limits-and-pricing" target="_blank" rel="noopener">Speed Insights: limits and pricing</a></li>
+    <li><a href="https://vercel.com/docs/project-configuration" target="_blank" rel="noopener">Project configuration</a></li>
+    <li><a href="https://vercel.com/docs/project-configuration/vercel-json" target="_blank" rel="noopener">vercel.json</a></li>
+    <li><a href="https://vercel.com/docs/rest-api" target="_blank" rel="noopener">REST API</a></li>
+  </ul>
+  <h3>Costes y límites</h3>
+  <ul>
+    <li><a href="https://vercel.com/pricing" target="_blank" rel="noopener">Precios</a></li>
+    <li><a href="https://vercel.com/docs/limits" target="_blank" rel="noopener">Limits</a></li>
+    <li><a href="https://vercel.com/docs/limits/fair-use-guidelines" target="_blank" rel="noopener">Fair Use Guidelines</a></li>
+  </ul>
+  <h3>Otros</h3>
+  <ul>
+    <li><a href="https://web.dev/vitals/" target="_blank" rel="noopener">Web Vitals (Google)</a></li>
+  </ul>
+
+  <h2>Bloque copiable de enlaces</h2>
+  <p>Usa el botón COPIAR para llevarte todas las direcciones como texto plano:</p>
+  <div class="codewrap"><pre><code>https://vercel.com/docs
+https://vercel.com/docs/getting-started-with-vercel
+https://vercel.com/docs/projects
+https://vercel.com/docs/projects/deploy-from-cli
+https://vercel.com/docs/drop
+https://vercel.com/new
+https://vercel.com/templates
+https://vercel.com/docs/git/vercel-for-github
+https://vercel.com/docs/deployments/environments
+https://vercel.com/docs/deployments/managing-deployments
+https://vercel.com/docs/instant-rollback
+https://vercel.com/docs/deployments/promoting-a-deployment
+https://git-scm.com/doc
+https://docs.github.com
+https://vercel.com/docs/environment-variables
+https://vercel.com/docs/environment-variables/managing-environment-variables
+https://vercel.com/docs/environment-variables/sensitive-environment-variables
+https://vercel.com/docs/domains/set-up-custom-domain
+https://vercel.com/docs/domains/working-with-domains/add-a-domain
+https://vercel.com/docs/cli
+https://vercel.com/docs/functions
+https://vercel.com/docs/marketplace-storage
+https://vercel.com/docs/ai-gateway
+https://vercel.com/docs/ai-sdk
+https://vercel.com/docs/deployment-protection
+https://vercel.com/docs/rbac/access-roles
+https://vercel.com/docs/rbac/access-groups
+https://vercel.com/docs/analytics/limits-and-pricing
+https://vercel.com/docs/speed-insights/limits-and-pricing
+https://vercel.com/docs/project-configuration
+https://vercel.com/docs/project-configuration/vercel-json
+https://vercel.com/docs/rest-api
+https://vercel.com/pricing
+https://vercel.com/docs/limits
+https://vercel.com/docs/limits/fair-use-guidelines
+https://web.dev/vitals/</code></pre></div>
+
+  <h2>Advertencia final sobre precios y límites</h2>
+  <div class="note danger">
+    <p>Los números de límites y precios de esta guía proceden de las páginas oficiales indicadas y <strong>pueden cambiar</strong>. La fuente encontró cifras distintas para algunos precios en copias diferentes de la página de precios. <strong>Antes de contratar nada, comprueba <a href="https://vercel.com/pricing" target="_blank" rel="noopener">vercel.com/pricing</a> y <a href="https://vercel.com/docs/limits" target="_blank" rel="noopener">vercel.com/docs/limits</a>.</strong></p>
+  </div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- CRÉDITOS -->
+<!-- ============================================================ -->
+<section id="panel-creditos" role="tabpanel" aria-labelledby="tab-creditos" hidden>
+
+  <h2>Créditos</h2>
+
+  <div class="svgbox" id="svgCreditos" role="img" aria-label="Ilustración animada: tu proyecto viaja desde tu ordenador, pasa por la red de Vercel y llega a los visitantes de todo el mundo"></div>
+
+  <p>La ilustración representa el recorrido de una web: sale de tu ordenador, atraviesa la red de Vercel —donde se instala, compila y publica— y llega a los visitantes de todo el mundo. Las líneas animadas son los despliegues en tránsito; los nodos, la red de entrega.</p>
+
+  <div style="text-align:center;margin:2rem 0 1rem">
+    <div style="font-size:clamp(2rem,8vw,4rem);font-weight:900;line-height:1.05;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-.02em">Rubén Sbarsky</div>
+    <p style="font-size:1.1rem;font-weight:700;margin:.6rem 0 0">Autor del tutorial</p>
+  </div>
+
+  <div class="card">
+    <p><strong>Sobre esta versión.</strong> Tutorial interactivo basado en la guía <em>«Guía definitiva Vercel para Dummies»</em> de Rubén Sbarsky. Transformación pedagógica a HTML autónomo, con pestañas, buscador, listas de comprobación, ilustración SVG compartida entre INICIO y CRÉDITOS, impresión preparada y contenido copiable.</p>
+    <p><strong>Fecha y hora de creación:</strong> 17/10/2026 — 03:45:11</p>
+    <p><strong>Versión:</strong> V001</p>
+    <p><strong>Idioma:</strong> español.</p>
+    <p><strong>Nota de verificación:</strong> el archivo se ha construido y auditado de forma estática. No se ha ejecutado en un navegador real desde el entorno de generación; las funciones interactivas están implementadas y revisadas, pero su prueba final corresponde a quien abre el archivo. El contenido práctico conserva la marca <span class="badge b-nop">NO PROBADO</span> de la fuente cuando esta no ejecutó los procedimientos. Las pantallas, menús y cifras de Vercel pueden haber cambiado: consulta siempre la documentación oficial enlazada en FUENTES.</p>
+  </div>
+
+  <p style="text-align:center;color:var(--muted);font-size:.85rem">Gracias por leer y por probar lo que aprendes: publicar, romper y recuperar es la forma más rápida de entender Vercel.</p>
+
+</section>
+
+</main>
+
+<footer>
+  <p>Tutorial Vercel para principiantes · Versión V001 · 17/10/2026 — 03:45:11</p>
+  <p>Basado en la guía de Rubén Sbarsky y en la documentación oficial de Vercel. Contenido con fines educativos.</p>
+</footer>
+
+<button type="button" id="toTop" aria-label="Volver arriba">↑</button>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<div class="modal" id="copyModal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="copyModalTitle">
+    <h3 id="copyModalTitle">Copia manualmente</h3>
+    <p>El portapapeles no está disponible. Selecciona el texto y cópialo con Ctrl+C o Cmd+C.</p>
+    <textarea id="copyText" readonly></textarea>
+    <div class="modal-actions">
+      <button type="button" class="btn" id="copyModalClose">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ==================== UTILIDADES ==================== */
+var $ = function(s,c){ return (c||document).querySelector(s); };
+var $$ = function(s,c){ return Array.prototype.slice.call((c||document).querySelectorAll(s)); };
+
+var store = {
+  get: function(k,d){
+    try { var v = localStorage.getItem(k); return v===null ? d : JSON.parse(v); }
+    catch(e){ return d; }
+  },
+  set: function(k,v){
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){}
+  }
+};
+
+function toast(msg){
+  var t = $('#toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function(){ t.classList.remove('show'); }, 2800);
+}
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+/* ==================== TEMA ==================== */
+var root = document.documentElement;
+var themeBtn = $('#themeBtn');
+
+function applyTheme(theme){
+  root.setAttribute('data-theme', theme);
+  if(themeBtn){
+    themeBtn.textContent = theme === 'light' ? '☀️ Claro' : '🌙 Oscuro';
+    themeBtn.setAttribute('aria-pressed', theme === 'light' ? 'true' : 'false');
+  }
+}
+
+var savedTheme = store.get('vz_theme', 'dark');
+applyTheme(savedTheme === 'light' ? 'light' : 'dark');
+
+if(themeBtn){
+  themeBtn.addEventListener('click', function(){
+    var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    store.set('vz_theme', next);
+  });
+}
+
+/* ==================== TAMAÑO DE LETRA ==================== */
+var MIN_FS = 14, MAX_FS = 22;
+
+function applyFont(px){
+  px = Math.min(MAX_FS, Math.max(MIN_FS, px));
+  root.style.setProperty('--fs', px + 'px');
+  store.set('vz_fs', px);
+}
+
+var savedFs = parseInt(store.get('vz_fs', 16), 10);
+if(isNaN(savedFs)) savedFs = 16;
+applyFont(savedFs);
+
+var fontMinus = $('#fontMinus'), fontPlus = $('#fontPlus');
+if(fontMinus) fontMinus.addEventListener('click', function(){
+  var current = parseInt(store.get('vz_fs', 16), 10) || 16;
+  applyFont(current - 1);
+});
+if(fontPlus) fontPlus.addEventListener('click', function(){
+  var current = parseInt(store.get('vz_fs', 16), 10) || 16;
+  applyFont(current + 1);
+});
+
+/* ==================== PESTAÑAS ==================== */
+var tabButtons = $$('.tabbtn');
+var panels = $$('[role="tabpanel"]');
+
+function activateTab(id, opts){
+  opts = opts || {};
+  var exists = panels.some(function(p){ return p.id === 'panel-' + id; });
+  if(!exists) id = 'inicio';
+
+  tabButtons.forEach(function(b){
+    var on = b.getAttribute('data-tab') === id;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+    b.tabIndex = on ? 0 : -1;
+  });
+
+  panels.forEach(function(p){
+    p.hidden = (p.id !== 'panel-' + id);
+  });
+
+  if(opts.push !== false){
+    try { history.replaceState(null, '', '#' + id); }
+    catch(e){ /* file:// puede bloquearlo: no es crítico */ }
+  }
+
+  if(id === 'inicio') mountSVG($('#svgInicio'));
+  if(id === 'creditos') mountSVG($('#svgCreditos'));
+
+  if(opts.scrollTop !== false){
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+tabButtons.forEach(function(btn){
+  btn.addEventListener('click', function(){
+    activateTab(btn.getAttribute('data-tab'));
+  });
+  btn.addEventListener('keydown', function(e){
+    var idx = tabButtons.indexOf(btn);
+    var next = idx;
+    if(e.key === 'ArrowRight') next = (idx + 1) % tabButtons.length;
+    else if(e.key === 'ArrowLeft') next = (idx - 1 + tabButtons.length) % tabButtons.length;
+    else if(e.key === 'Home') next = 0;
+    else if(e.key === 'End') next = tabButtons.length - 1;
+    else return;
+    e.preventDefault();
+    tabButtons[next].focus();
+    activateTab(tabButtons[next].getAttribute('data-tab'));
+  });
+});
+
+document.addEventListener('click', function(e){
+  var a = e.target.closest ? e.target.closest('a[href^="#"]') : null;
+  if(!a) return;
+  var id = a.getAttribute('href').slice(1);
+  if(!id) return;
+  var isTab = panels.some(function(p){ return p.id === 'panel-' + id; });
+  if(isTab){
+    e.preventDefault();
+    activateTab(id);
+  }
+});
+
+window.addEventListener('hashchange', function(){
+  var id = (location.hash || '').replace('#','');
+  if(id) activateTab(id, { push: false });
+});
+
+/* ==================== SVG COMPARTIDO ==================== */
+var SVG_TEMPLATE = '<svg viewBox="0 0 800 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="__UID__-t">'
+  + '<title id="__UID__-t">Tu proyecto viaja desde tu ordenador, pasa por la red de Vercel y llega a los visitantes de todo el mundo</title>'
+  + '<defs>'
+  + '<linearGradient id="__UID__-g1" x1="0" y1="0" x2="1" y2="1">'
+  + '<stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#818cf8"/>'
+  + '</linearGradient>'
+  + '<linearGradient id="__UID__-g2" x1="0" y1="0" x2="0" y2="1">'
+  + '<stop offset="0" stop-color="#13233f"/><stop offset="1" stop-color="#0b1222"/>'
+  + '</linearGradient>'
+  + '<radialGradient id="__UID__-g3" cx="50%" cy="50%" r="50%">'
+  + '<stop offset="0" stop-color="#38bdf8" stop-opacity="0.55"/>'
+  + '<stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>'
+  + '</radialGradient>'
+  + '<filter id="__UID__-glow" x="-50%" y="-50%" width="200%" height="200%">'
+  + '<feGaussianBlur stdDeviation="5" result="b"/>'
+  + '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>'
+  + '</filter>'
+  + '</defs>'
+  + '<rect x="0" y="0" width="800" height="340" rx="18" fill="url(#__UID__-g2)"/>'
+  + '<circle cx="650" cy="90" r="120" fill="url(#__UID__-g3)" class="anim-pulse"/>'
+  + '<circle cx="150" cy="250" r="90" fill="url(#__UID__-g3)" class="anim-pulse" style="animation-delay:1.2s"/>'
+  + '<text x="90" y="42" fill="#94a3b8" font-family="system-ui,Arial" font-size="13" letter-spacing="2">TÚ</text>'
+  + '<text x="380" y="42" fill="#94a3b8" font-family="system-ui,Arial" font-size="13" letter-spacing="2">VERCEL</text>'
+  + '<text x="640" y="42" fill="#94a3b8" font-family="system-ui,Arial" font-size="13" letter-spacing="2">VISITANTES</text>'
+  + '<g filter="url(#__UID__-glow)">'
+  + '<rect x="70" y="110" width="150" height="95" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>'
+  + '<rect x="82" y="122" width="126" height="62" rx="4" fill="#0b1222"/>'
+  + '<path d="M60 205 h170 l-14 18 h-142 z" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>'
+  + '</g>'
+  + '<g stroke="#38bdf8" stroke-width="3" stroke-linecap="round" opacity="0.85">'
+  + '<line x1="92" y1="136" x2="150" y2="136"/>'
+  + '<line x1="92" y1="148" x2="170" y2="148"/>'
+  + '<line x1="92" y1="160" x2="130" y2="160"/>'
+  + '<line x1="92" y1="172" x2="160" y2="172"/>'
+  + '</g>'
+  + '<path class="anim-dash" d="M235 150 C 290 150, 300 110, 350 110" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="7 9" stroke-linecap="round"/>'
+  + '<path class="anim-dash" d="M235 180 C 300 180, 320 220, 380 220" fill="none" stroke="#818cf8" stroke-width="3" stroke-dasharray="7 9" stroke-linecap="round"/>'
+  + '<path class="anim-dash" d="M470 150 C 530 150, 540 105, 600 105" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="7 9" stroke-linecap="round"/>'
+  + '<path class="anim-dash" d="M470 200 C 540 200, 550 235, 610 235" fill="none" stroke="#818cf8" stroke-width="3" stroke-dasharray="7 9" stroke-linecap="round"/>'
+  + '<g filter="url(#__UID__-glow)">'
+  + '<path d="M360 210 a40 40 0 0 1 8 -79 a52 52 0 0 1 99 15 a34 34 0 0 1 -5 64 z" fill="#1e3a5f" stroke="#38bdf8" stroke-width="2"/>'
+  + '<path d="M400 150 l24 40 h-48 z" fill="#38bdf8"/>'
+  + '</g>'
+  + '<g>'
+  + '<circle cx="640" cy="105" r="8" fill="#38bdf8" class="anim-pulse"/>'
+  + '<circle cx="680" cy="135" r="6" fill="#818cf8" class="anim-pulse" style="animation-delay:.5s"/>'
+  + '<circle cx="660" cy="170" r="7" fill="#38bdf8" class="anim-pulse" style="animation-delay:1s"/>'
+  + '<circle cx="700" cy="200" r="5" fill="#818cf8" class="anim-pulse" style="animation-delay:1.5s"/>'
+  + '<circle cx="620" cy="235" r="6" fill="#38bdf8" class="anim-pulse" style="animation-delay:.8s"/>'
+  + '<path d="M640 105 L680 135 L660 170 L700 200 L620 235" fill="none" stroke="#334155" stroke-width="1.5"/>'
+  + '<circle cx="650" cy="150" r="80" fill="none" stroke="#334155" stroke-width="1" stroke-dasharray="3 6"/>'
+  + '</g>'
+  + '</svg>';
+
+var uidCounter = 0;
+
+function mountSVG(container){
+  if(!container) return;
+  if(container.querySelector('svg')) return;
+  try{
+    var uid = 'vz' + (++uidCounter) + '_' + Date.now().toString(36);
+    container.innerHTML = SVG_TEMPLATE.split('__UID__').join(uid);
+    if(!container.querySelector('svg')) throw new Error('montaje fallido');
+    container.style.backgroundImage = '';
+    container.style.minHeight = '';
+  }catch(e){
+    fallbackSVG(container);
+  }
+}
+
+function fallbackSVG(container){
+  try{
+    var uid = 'fb' + (++uidCounter);
+    var staticSvg = SVG_TEMPLATE.split('__UID__').join(uid).replace(/class="anim-[^"]*"/g, '');
+    container.innerHTML = '';
+    container.style.backgroundImage = 'url("data:image/svg+xml;charset=utf-8,' + encodeURIComponent(staticSvg) + '")';
+    container.style.backgroundSize = 'contain';
+    container.style.backgroundRepeat = 'no-repeat';
+    container.style.backgroundPosition = 'center';
+    container.style.minHeight = '220px';
+    container.setAttribute('aria-label', 'Ilustración estática: tu proyecto viaja desde tu ordenador, pasa por la red de Vercel y llega a los visitantes');
+  }catch(e2){
+    container.textContent = 'Ilustración no disponible en este navegador.';
+  }
+}
+
+/* Reparación periódica: si un contenedor visible queda vacío, se vuelve a montar */
+setInterval(function(){
+  $$('.svgbox').forEach(function(box){
+    if(box.offsetParent === null) return;
+    if(!box.querySelector('svg') && !box.style.backgroundImage){
+      mountSVG(box);
+    }
+  });
+}, 2000);
+
+/* ==================== PAUSA DE ANIMACIÓN ==================== */
+var pauseBtn = $('#pauseAnim');
+var animPaused = store.get('vz_paused', false) === true;
+
+function applyPause(p){
+  document.body.classList.toggle('anim-paused', p);
+  if(pauseBtn){
+    pauseBtn.textContent = p ? '▶ Reanudar animación' : '⏸ Pausar animación';
+    pauseBtn.setAttribute('aria-pressed', p ? 'true' : 'false');
+  }
+}
+
+applyPause(animPaused);
+
+if(pauseBtn){
+  pauseBtn.addEventListener('click', function(){
+    animPaused = !animPaused;
+    applyPause(animPaused);
+    store.set('vz_paused', animPaused);
+  });
+}
+
+/* ==================== PROGRESO Y VOLVER ARRIBA ==================== */
+var progressbar = $('#progressbar');
+var toTop = $('#toTop');
+
+function updateProgress(){
+  var h = document.documentElement;
+  var max = h.scrollHeight - h.clientHeight;
+  var p = max > 0 ? (h.scrollTop / max) * 100 : 0;
+  if(progressbar) progressbar.style.width = p + '%';
+  if(toTop) toTop.classList.toggle('show', h.scrollTop > 500);
+}
+
+window.addEventListener('scroll', updateProgress, { passive: true });
+window.addEventListener('resize', updateProgress);
+
+if(toTop){
+  toTop.addEventListener('click', function(){
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+/* ==================== BUSCADOR ==================== */
+var searchInput = $('#search');
+var resultsBox = $('#searchResults');
+var searchIndex = null;
+var searchTimer = null;
+
+function buildIndex(){
+  searchIndex = [];
+  panels.forEach(function(panel){
+    var tabId = panel.id.replace('panel-','');
+    var label = tabId;
+    tabButtons.forEach(function(b){
+      if(b.getAttribute('data-tab') === tabId) label = (b.textContent || '').trim();
+    });
+    $$('h2,h3,h4,p,li,td,th,summary', panel).forEach(function(el){
+      if(el.closest('pre')) return;
+      var raw = (el.textContent || '').replace(/\s+/g,' ').trim();
+      if(raw.length < 10) return;
+      searchIndex.push({
+        el: el,
+        raw: raw,
+        low: raw.toLowerCase(),
+        tabId: tabId,
+        label: label
+      });
+    });
+  });
+}
+
+function runSearch(q){
+  if(!searchIndex) buildIndex();
+  var words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if(!words.length) return [];
+  var seen = {};
+  var out = [];
+  for(var i = 0; i < searchIndex.length; i++){
+    var item = searchIndex[i];
+    var ok = true;
+    for(var w = 0; w < words.length; w++){
+      if(item.low.indexOf(words[w]) === -1){ ok = false; break; }
+    }
+    if(!ok) continue;
+    var key = item.tabId + '|' + item.low.slice(0, 90);
+    if(seen[key]) continue;
+    seen[key] = 1;
+    out.push(item);
+    if(out.length >= 20) break;
+  }
+  return out;
+}
+
+function renderResults(items){
+  if(!resultsBox) return;
+  if(!items.length){
+    resultsBox.innerHTML = '<div class="no-results">Sin resultados. Prueba con otra palabra.</div>';
+    resultsBox.hidden = false;
+    return;
+  }
+  var html = '';
+  items.forEach(function(it, i){
+    var snippet = it.raw.length > 150 ? it.raw.slice(0, 150) + '…' : it.raw;
+    html += '<button type="button" class="sr-item" data-i="' + i + '">'
+          + '<span class="sr-tab">' + esc(it.label) + '</span>'
+          + '<span class="sr-text">' + esc(snippet) + '</span></button>';
+  });
+  resultsBox.innerHTML = html;
+  resultsBox.hidden = false;
+  $$('.sr-item', resultsBox).forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var it = items[parseInt(btn.getAttribute('data-i'), 10)];
+      resultsBox.hidden = true;
+      if(searchInput) searchInput.value = '';
+      activateTab(it.tabId, { scrollTop: false });
+      setTimeout(function(){
+        try { it.el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){}
+        it.el.classList.add('flash');
+        setTimeout(function(){ it.el.classList.remove('flash'); }, 2200);
+      }, 80);
+    });
+  });
+}
+
+if(searchInput){
+  searchInput.addEventListener('input', function(){
+    clearTimeout(searchTimer);
+    var q = searchInput.value.trim();
+    if(q.length < 2){
+      resultsBox.hidden = true;
+      return;
+    }
+    searchTimer = setTimeout(function(){
+      renderResults(runSearch(q));
+    }, 180);
+  });
+
+  searchInput.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      resultsBox.hidden = true;
+      searchInput.blur();
+    }
+  });
+}
+
+document.addEventListener('click', function(e){
+  if(!resultsBox || resultsBox.hidden) return;
+  if(e.target === searchInput) return;
+  if(resultsBox.contains(e.target)) return;
+  resultsBox.hidden = true;
+});
+
+/* ==================== LISTAS DE COMPROBACIÓN ==================== */
+$$('input[type="checkbox"][data-check]').forEach(function(cb){
+  var key = 'vz_check_' + cb.getAttribute('data-check');
+  cb.checked = store.get(key, false) === true;
+  cb.addEventListener('change', function(){
+    store.set(key, cb.checked);
+  });
+});
+
+/* ==================== COPIAR ==================== */
+var copyModal = $('#copyModal');
+var copyText = $('#copyText');
+var copyModalClose = $('#copyModalClose');
+
+function openCopyModal(text){
+  if(!copyModal || !copyText) return;
+  copyText.value = text;
+  copyModal.hidden = false;
+  setTimeout(function(){
+    copyText.focus();
+    copyText.select();
+  }, 60);
+}
+
+if(copyModalClose){
+  copyModalClose.addEventListener('click', function(){
+    copyModal.hidden = true;
+  });
+}
+
+if(copyModal){
+  copyModal.addEventListener('click', function(e){
+    if(e.target === copyModal) copyModal.hidden = true;
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && !copyModal.hidden) copyModal.hidden = true;
+  });
+}
+
+function legacyCopy(text){
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly','');
+  ta.style.position = 'fixed';
+  ta.style.top = '0';
+  ta.style.left = '0';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  var ok = false;
+  try { ok = document.execCommand('copy'); } catch(e){ ok = false; }
+  document.body.removeChild(ta);
+  if(!ok) throw new Error('copia no disponible');
+}
+
+function copyTextToClipboard(text, btn){
+  function success(){
+    toast('Copiado al portapapeles');
+    if(btn){
+      var original = btn.textContent;
+      btn.textContent = '¡COPIADO!';
+      setTimeout(function(){ btn.textContent = original; }, 1500);
+    }
+  }
+  function failure(){
+    openCopyModal(text);
+    toast('No se pudo copiar automáticamente. Copia el texto del cuadro.');
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(success).catch(function(){
+      try { legacyCopy(text); success(); }
+      catch(e){ failure(); }
+    });
+  }else{
+    try { legacyCopy(text); success(); }
+    catch(e){ failure(); }
+  }
+}
+
+$$('pre').forEach(function(pre){
+  var wrap = document.createElement('div');
+  wrap.className = 'codewrap';
+  pre.parentNode.insertBefore(wrap, pre);
+  wrap.appendChild(pre);
+
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'copybtn';
+  btn.textContent = 'COPIAR';
+  btn.setAttribute('aria-label', 'Copiar este bloque de contenido');
+  btn.addEventListener('click', function(){
+    copyTextToClipboard(pre.innerText || pre.textContent || '', btn);
+  });
+  wrap.appendChild(btn);
+});
+
+/* ==================== IMPRESIÓN ==================== */
+var printState = null;
+
+function preparePrint(){
+  if(printState) return;
+  var closed = $$('details:not([open])');
+  closed.forEach(function(d){
+    d.dataset.wasClosed = '1';
+    d.open = true;
+  });
+  mountSVG($('#svgInicio'));
+  mountSVG($('#svgCreditos'));
+  document.body.classList.add('printing');
+  printState = { closed: closed };
+}
+
+function restorePrint(){
+  if(!printState) return;
+  printState.closed.forEach(function(d){
+    if(d.dataset.wasClosed){
+      d.open = false;
+      delete d.dataset.wasClosed;
+    }
+  });
+  document.body.classList.remove('printing');
+  printState = null;
+}
+
+window.addEventListener('beforeprint', function(){
+  preparePrint();
+});
+window.addEventListener('afterprint', function(){
+  restorePrint();
+});
+
+var printBtn = $('#printBtn');
+if(printBtn){
+  printBtn.addEventListener('click', function(){
+    try{
+      preparePrint();
+      window.print();
+      setTimeout(restorePrint, 1200);
+    }catch(e){
+      restorePrint();
+      toast('Abre este archivo directamente en el navegador y utiliza Ctrl+P o Cmd+P.');
+    }
+  });
+}
+
+/* ==================== INICIALIZACIÓN ==================== */
+buildIndex();
+
+var initialHash = (location.hash || '').replace('#','');
+if(!initialHash || !panels.some(function(p){ return p.id === 'panel-' + initialHash; })){
+  initialHash = 'inicio';
+}
+activateTab(initialHash, { push: false, scrollTop: false });
+
+mountSVG($('#svgInicio'));
+
+updateProgress();
+
+})();
+</script>
+
+</body>
+</html>
